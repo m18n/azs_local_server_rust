@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service</title>
+    <link rel="stylesheet" href="/public/old/css/style.css">
+    <link rel="stylesheet" href="/public/old/css/configuration.css">
+</head>
+
+<body>
+    <div class="black"></div>
+    <div class="settings_tank">
+        <img src="/public/old/img/cross.png" alt="" id="cross">
+    </div>
+    <div class="wrapper">
+        <div class="one">
+            <div class="type_gas">
+                <h2>Види палива</h2>
+                <div class="list_gas">
+                    <div class="item_gas">
+                        <span>1. -> A95</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+
+                    <div class="item_gas">
+                        <span> 2. -> ДП</span>
+                    </div>
+
+                </div>
+
+
+            </div>
+            <div class="measure">
+                <h2>Рівномір</h2>
+            </div>
+            <div class="casa">
+                <h2>Каса</h2>
+            </div>
+            <div class="adjustment">
+                <h2>Юстирування</h2>
+            </div>
+            <div class="exit">
+                <a href="/old/main/settings">Вихід</a>
+            </div>
+        </div>
+        <div class="two">
+            <div class="tanks">
+                <h2>Резервуари</h2>
+                <div class="list_tank">
+                    {{#tanks}}
+                    <div class="item_tank" valueid="{{id_tank}}">
+                        {{id_tank}}. -> {{name}}
+                    </div>
+                    {{/tanks}}
+                    
+                   
+                </div>
+            </div>
+        </div>
+
+        <div class="lines none">
+            <div class="item_line one_line none">
+                <div class="item_color one_half_line ">
+                    
+                </div>
+                <div class="one_line_to_one_p ">
+                    <div class="item_color one_to_one_1">
+
+                    </div>
+                    
+                </div>
+                <div class="one_line_to_two_p none">
+                    <div class="item_color one_to_two_1">
+
+                    </div>  
+                    <div class="item_color one_to_two_2">
+
+                    </div>
+                </div>
+                <div class=" one_line_to_three_p none">
+                    <div class="item_color one_to_three_1">
+
+                    </div>
+                    <div class="item_color one_to_three_2">
+
+                    </div>
+                </div>
+                <div class=" one_line_to_four_p none">
+                    <div class="item_color one_to_four_1">
+
+                    </div>
+                    <div class="item_color one_to_four_2">
+
+                    </div>
+                </div>
+                <div class="     one_line_to_five_p none">
+                    <div class="item_color one_to_five_1">
+
+                    </div>
+                    <div class="item_color one_to_five_2">
+
+                    </div>
+                </div>
+            </div>
+            <div class="item_line two_line none">
+                <div class="item_color two_half_line ">
+                    
+                </div>
+                <div class="two_line_to_one_p none">
+                    <div class="item_color two_to_one_1">
+
+                    </div>
+                    <div class="item_color two_to_one_2">
+
+                    </div>
+                </div>
+                <div class="two_line_to_two_p ">
+                    <div class="item_color two_to_two_1">
+
+                    </div>
+                    
+                </div>
+                <div class="two_line_to_three_p none">
+                    <div class="item_color two_to_three_1">
+
+                    </div>
+                    <div class="item_color two_to_three_2">
+
+                    </div>
+                </div>
+                <div class="two_line_to_four_p none">
+                    <div class="item_color two_to_four_1">
+
+                    </div>
+                    <div class="item_color two_to_four_2">
+
+                    </div>
+                </div>
+                <div class="two_line_to_five_p none">
+                    <div class="item_color two_to_five_1">
+
+                    </div>
+                    <div class="item_color two_to_five_2">
+
+                    </div>
+                </div>
+            </div>
+            <div class="item_line three_line none">
+                <div class="item_color three_half_line ">
+
+                </div>
+                <div class="three_line_to_one_p none">
+                    <div class="item_color three_to_one_1">
+
+                    </div>
+                    <div class="item_color three_to_one_2">
+
+                    </div>
+                </div>
+                <div class="three_line_to_two_p none">
+                    <div class="item_color three_to_two_1">
+
+                    </div>
+                    <div class="item_color three_to_two_2">
+
+                    </div>
+                </div>
+                <div class="three_line_to_three_p ">
+                    <div class="item_color three_to_three_1">
+
+                    </div>
+                   
+                </div>
+                <div class="three_line_to_four_p none">
+                    <div class="item_color three_to_four_1">
+
+                    </div>
+                    <div class="item_color three_to_four_2">
+
+                    </div>
+                </div>
+                <div class="three_line_to_five_p none">
+                    <div class="item_color three_to_five_1">
+
+                    </div>
+                    <div class="item_color three_to_five_2">
+
+                    </div>
+                </div>
+            </div>
+            <div class="item_line four_line none">
+                <div class="item_color four_half_line ">
+
+                </div>
+                <div class="four_line_to_one_p none">
+                    <div class="item_color four_to_one_1">
+
+                    </div>
+                    <div class="item_color four_to_one_2">
+
+                    </div>
+                </div>
+                <div class="four_line_to_two_p none">
+                    <div class="item_color four_to_two_1">
+
+                    </div>
+                    <div class="item_color four_to_two_2">
+
+                    </div>
+                </div>
+                <div class="four_line_to_three_p none">
+                    <div class="item_color four_to_three_1">
+
+                    </div>
+                    <div class="item_color four_to_three_2">
+
+                    </div>
+                </div>
+                <div class="four_line_to_four_p ">
+                    <div class="item_color four_to_four_1">
+
+                    </div>
+                    
+                </div>
+                <div class="four_line_to_five_p none">
+                    <div class="item_color four_to_five_1">
+
+                    </div>
+                    <div class="item_color four_to_five_2">
+
+                    </div>
+                </div>
+            </div>
+            <div class="item_line five_line none">
+                <div class="item_color five_half_line ">
+
+                </div>
+                <div class="five_line_to_one_p none">
+                    <div class="item_color five_to_one_1">
+
+                    </div>
+                    <div class="item_color five_to_one_2">
+
+                    </div>
+                </div>
+                <div class="five_line_to_two_p none">
+                    <div class="item_color five_to_two_1">
+
+                    </div>
+                    <div class="item_color five_to_two_2">
+
+                    </div>
+                </div>
+                <div class="five_line_to_three_p none">
+                    <div class="item_color five_to_three_1">
+
+                    </div>
+                    <div class="item_color five_to_three_2">
+
+                    </div>
+                </div>
+                <div class="five_line_to_four_p none">
+                    <div class="item_color five_to_four_1">
+
+                    </div>
+                    <div class="item_color five_to_four_2">
+
+                    </div>
+                    
+                </div>
+                <div class="five_line_to_five_p">
+                    <div class="item_color five_to_five_1">
+
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        <div class="three">
+            <div class="trks">
+                <h2>Колонки</h2>
+                <div class="list_trk">
+                    <div class="viewport">
+                        {{#pumps}}
+                        <div class="item_trk" valueid="{{id_trk}}" >
+                            <div class="lable_trk">
+                                TRK {{id_trk}}
+                            </div>
+                            <div class="guitrk">
+                                TRK {{id_trk}}
+                                <div class="pistol">
+                                    <div class="p_left">
+                                        {{#pists}}
+                                        <div class="p_item">
+                                            {{name}}
+                                        </div>
+                                        {{/pists}}
+                                       
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        {{/pumps}}
+                        
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let pumparray={"tanks":[{{#tanks}}{"id_tank":"{{id_tank}}","color":"{{color}}","id_tovar":"{{id_tovar}}","name":"{{name}}","price":"{{price}}"},{{/tanks}}],"pumps":[{{#pumps}}{"id_trk":"{{id_trk}}","pists":[{{#pists}}{"id_pist":"{{id_pist}}","id_tank":"{{id_tank}}","color":"{{color}}","id_tovar":"{{id_tovar}}","name":"{{name}}","price":"{{price}}"},{{/pists}}]},{{/pumps}}]};
+        let string=JSON.stringify(pumparray);
+        pumparray=JSON.parse(string);
+        console.log(pumparray);
+    </script>
+    <script src="/public/old/js/jquery-3.6.0.min.js"></script>
+    <script src="/public/old/js/admin.js"></script>
+    <script src="/public/old/js/configure.js"></script>
+    <script src="/public/old/js/loadfunction.js"></script>
+</body>
+
+</html>

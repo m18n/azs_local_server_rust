@@ -1,0 +1,7 @@
+.select_unit{
+    border:solid 2px yellow !important;
+    z-index: 3 !important;
+    transform: scale(1.17) translate(0%,0%);
+    /* opacity: 1 !important; */
+    /* background-color: #979797 !important; */
+}

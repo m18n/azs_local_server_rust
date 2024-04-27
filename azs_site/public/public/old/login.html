@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link rel="stylesheet" href="/public/old/css/login.css">
+</head>
+
+<body>
+    <div class="conteiner">
+        <div class="login">
+            {{#smena}}
+            <div class="auth" >
+                Продовжити зміну
+            </div>
+            {{/smena}}
+            {{^smena}}
+            <div class="auth" style="background-color: brown;">
+                Створити зміну
+            </div>
+            {{/smena}}
+            <div class="authinput" id="auth">
+                <select id="login" name="login">
+                    {{#users}}
+                    <option value="{{id_user}}">{{name}}</option>
+
+                    {{/users}}
+
+                </select>
+
+                <input type="password" name="password" placeholder="password" id="password">
+                <span class="status">STATUS:</span>
+                <button onclick="auth();">Вхід</button>
+
+            </div>
+        </div>
+    </div>
+    <script src="/public/old/js/jquery-3.6.0.min.js"></script>
+    <script src="/public/old/js/post.js"></script>
+</body>
+
+</html>

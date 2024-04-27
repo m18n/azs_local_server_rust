@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AZS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/main.css">
+  
+</head>
+
+<body>
+    <div class="container">
+        
+        <div class="content">
+            <div class="dispensing_unit none" id="unit_shab">
+                
+                <div class="unit_menu">
+                    <div class="gasoline">
+                        
+                        <button>A92</button>
+                        <button>95e</button>
+                        <button>80a</button>
+                        <button>98e</button>
+                        <button>дт</button>
+                    </div>
+                    <span id="inex_unit">99</span>
+                </div>
+                <div class="unit_content">
+                    <div class="calculator">
+                        <div class="row_1">
+                            <div class="input_des">
+                                <input type="number" class="input many" id="many" onchange="CalGasolineMany(this);"  onclick="OpenClavaRed(this);" placeholder="0.00" >
+                                <input type="number" class="input liter" id="liter" onchange="CalGasolineLiter(this);" onclick="OpenClavaBlue(this);" placeholder="0.00" >
+                                <input type="number">
+                            </div>
+                            <div class="clava none" id="cl_blue" style="color: blue;" >
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);" >1</div>
+                                    <div class="c_col" onclick="OnCal(this);">2</div>
+                                    <div class="c_col" onclick="OnCal(this);">3</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);">4</div>
+                                    <div class="c_col" onclick="OnCal(this);">5</div>
+                                    <div class="c_col" onclick="OnCal(this);">6</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);">7</div>
+                                    <div class="c_col" onclick="OnCal(this);">8</div>
+                                    <div class="c_col" onclick="OnCal(this);">9</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col" style="color:grey;">$</div>
+                                    <div class="c_col" onclick="OnCal(this);">0</div>
+                                    <div class="c_col" onclick="OnCal(this);">.</div>
+                                </div>
+                            </div>
+                            <div class="clava none" id="cl_red" style="color: red;">
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);">1</div>
+                                    <div class="c_col" onclick="OnCal(this);">2</div>
+                                    <div class="c_col" onclick="OnCal(this);">3</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);">4</div>
+                                    <div class="c_col" onclick="OnCal(this);">5</div>
+                                    <div class="c_col" onclick="OnCal(this);">6</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col" onclick="OnCal(this);">7</div>
+                                    <div class="c_col" onclick="OnCal(this);">8</div>
+                                    <div class="c_col" onclick="OnCal(this);">9</div>
+                                </div>
+                                <div class="c_row">
+                                    <div class="c_col"  onclick="OnNext(this);">$</div>
+                                    <div class="c_col" onclick="OnCal(this);">0</div>
+                                    <div class="c_col" onclick="OnCal(this);">.</div>
+                                </div>
+                            </div>
+                            <div class="out_des" id="out_des">
+                                <input type="number" value="0,00" placeholder="0,00" class="des_val" >
+                            <input type="number" value="0,00" placeholder="0,00" class="des_val" >
+                            <input type="number" name="price" id="price" value="28.50">
+                            </div>
+                        </div>
+                        <div class="row_2">
+                            <!-- <select name="" id="" class="pay">
+                                <option value="">Готівка</option>
+                                <option value="">Талон</option>
+                                <option value="">Відомість</option>
+                                <option value="">Банк1</option>
+                                <option value="">Пал.картка</option>
+                            </select> -->
+                            <div class="option">
+                                <div class="item_opt item_g"  style="background-color: rgb(14, 212, 14);" >Готівка</div>
+                                <div class="item_opt item_o none"  style="background-color: rgb(14, 212, 14);">Готівка</div>
+                                <div class="item_opt item_o none" style="background-color: rgb(84, 84, 240);">Талон</div>
+                                <div class="item_opt item_o none" style="background-color: yellow;">Відомість</div>
+                                <div class="item_opt item_o none" style="background-color: rgb(224, 224, 255);">Банк1</div>
+                                <div class="item_opt item_o none" style="background-color: rgb(255, 187, 0);">Пал.картка</div>
+                            </div>
+                            <!-- <input type="number" value="0.00" class="des_val" onclick="OpenClava(this);">
+                            <input type="number" value="0.00" class="des_val" onclick="OpenClava(this);">
+                            <input type="number" name="price" id="price" value="28.50"> -->
+                        </div>
+                    
+                    </div>
+                    <div class="control_ges">
+                        <div class="start_ges" onclick="StartDes(this);">
+                            <h2>ПУСК</h2>
+                        </div>
+                        <div class="stop_ges" onclick="StopDes(this);">
+                            <h2>СТОП</h2>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <div class="mini"></div>
+                        <h3 class="info_ges">ОСТАНОВ</h3>
+                      
+                        <div class="mini"></div>
+                    </div>
+                </div>
+                
+            </div>
+           
+        <div class="menu" onmouseleave="HideMenu(this);">
+            <div class="region" >
+                <div class="min_menu" id="min_menu"  onmouseenter="ShowMenu(this);">
+                    <span>2020-04-12 12:22</span> 
+                </div>
+            
+                <div class="slider" >
+                    <div class="items"   >
+                        <div class="item c_product">Продаж товару</div>
+                        <div class="item c_product">Перегляд продаж</div>
+                        <div class="item c_prk">ПРК</div>
+                        <div class="item c_info">Додатково
+                            <div class="mark disable">
+                                <div class="item item_under c_info">Всі Вікна</div>
+                                <div class="item item_under c_info">Перезапуск програми</div>
+                                <div class="item item_under c_info">Перезапуск Пк</div>
+                                <div class="item item_under c_info">Виключити Пк</div>
+                                <div class="item item_under c_info">Відміна</div>
+                                <div class="item item_under c_info">Сервіс</div>
+                            </div>
+                        </div>
+                        <div class="item c_close">Реж.Закритя
+                            <div class="mark disable">
+                                <div class="item item_under c_close">Всі Вікна</div>
+                                <div class="item item_under c_close" onclick="RestartProgram();">Перезапуск програми</div>
+                                <div class="item item_under c_close">Перезапуск Пк</div>
+                                <div class="item item_under c_close">Виключити Пк</div>
+                                <div class="item item_under c_close">Відміна</div>
+                                <div class="item item_under c_close" onclick="LoadSite('/service','');">Сервіс</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/jquery-3.6.0.min.js"></script>
+    <script src="js/unit.js"></script>
+    <script src="js/core.js"></script>   
+    <script src="js/menu.js"></script>
+   
+</body>
+
+</html>

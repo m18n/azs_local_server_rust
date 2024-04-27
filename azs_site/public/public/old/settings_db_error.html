@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service</title>
+    <link rel="stylesheet" href="/public/old/css/style.css">
+    <link rel="stylesheet" href="/public/old/css/service.css">
+    <link rel="stylesheet" href="/public/old/css/serviceadmin.css">
+    <link rel="stylesheet" href="/public/old/css/db.css">
+</head>
+<body>
+<div class="content">
+    <div class="heads">
+        <a href="/old/main/settings"><img onclick="LoadSite('/serv/service/configure','');" style="cursor: pointer;" src="/public/old/img/arr.png" class="back" alt=""></a>
+        <h1 class="h t_f">Налаштування AZS</h1>
+    </div>
+    <div class="row_info">
+    <div class="settings_azs" id="sett_azs">
+        {{#mysql_info_last}}
+        <div>
+            <span>host: </span><input type="text" name="host" value="{{ip}}" placeholder="host" id="host">
+        </div>
+        <div>
+            <span>user: </span><input type="text" name="user" value="{{login}}" placeholder="user" id="user">
+        </div>
+
+        <div>
+            <span>password: </span><input type="text" name="password" value="{{password}}" placeholder="password" id="pass">
+        </div>
+        <div>
+            <span>database: </span><input type="text" name="database" value="{{database}}" placeholder="database" id="database">
+        </div>
+        <div>
+            <span>port: </span><input type="text" name="port" value="{{port}}" placeholder="port" id="port">
+        </div>
+        {{/mysql_info_last}}
+        <span id="stat_con" xdata="1">STATUS CONNECT:</span>
+        <button onclick=" settings_db_error();">Зберегти</button>
+    </div>
+    <div class="last_error">
+        <h3>Останні помилки</h3>
+        <div class="space_error">
+            {{error_db}}
+        </div>
+    </div>
+    </div>
+</div>
+    <script src="/public/old/js/jquery-3.6.0.min.js"></script>
+    <script src="/public/old/js/post.js"></script>
+    <script src="/public/old/js/admin.js"></script>
+    <script src="/public/old/js/status.js"></script>
+    <script src="/public/old/js/loadfunction.js"></script>
+    <script src="/public/old/js/savefunction.js"></script>
+    <script src="/public/old/js/database.js"></script>
+</body>
+</html>

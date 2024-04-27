@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service</title>
+    <link rel="stylesheet" href="/public/css/style.css">
+    <link rel="stylesheet" href="/public/css/service.css">
+    <link rel="stylesheet" href="/public/css/serviceadmin.css">
+</head>
+<body>
+    <div class="heads">
+        <img onclick="LoadSite('/serv/service/configure/tank','');" style="cursor: pointer;" src="/public/img/arr.png" class="back" alt="">
+        <h1 class="h t_f">Настройки Товару</h1>
+    </div>
+    <div class="settings_azs settings_tovar">
+        <div>
+        <span>name: </span><input type="text" placeholder="name" id="name">
+        </div>
+        <div>
+        <span>name_p: </span><input type="text" placeholder="name_p" id="name_p">
+        </div>
+        <div>
+        <span>name_p_f: </span><input type="text" placeholder="name_p_f" id="name_p_f">
+        </div>
+        <div>
+        <span>nd_code: </span><input type="text" placeholder="nd_code" id="nd_code">
+        </div>
+        <div>
+        <span>wog_code: </span><input type="text" placeholder="wog_code" id="wog_code">
+        </div>
+        <button onclick="SaveTovare();">Зберегти</button>
+    </div>
+    <script src="/public/js/jquery-3.6.0.min.js"></script>
+    <script src="/public/js/admin.js"></script>
+    <script src="/public/js/loadfunction.js"></script>
+    <script src="/public/js/savefunction.js"></script>
+</body>
+</html>

@@ -9,6 +9,7 @@ mod controllers;
 mod globals;
 mod check_db_api_middleware;
 mod jwt;
+mod check_auth_middleware;
 
 
 use std::sync::Arc;
@@ -24,6 +25,7 @@ use crate::check_db_view_middleware::CheckDbView;
 use crate::models::{AzsDb, get_nowtime_str, local_getMysqlInfo, local_io_getMysqlInfo, local_io_initDb, MyError, MysqlInfo};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+use crate::check_auth_middleware::CheckAuth;
 use crate::check_db_api_middleware::CheckDbApi;
 //use crate::logger::LogManager;
 use crate::swagger_docs::ApiDoc;
@@ -84,9 +86,15 @@ async fn main() -> std::io::Result<()> {
                 SwaggerUi::new("/docs/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
             .service(
-                web::scope("/view")
-                .wrap(CheckDbView)
-                    .service(view_controller::login)
+                web::scope("/view/old")
+                    .wrap(CheckDbView)
+                        .service(view_controller::login)
+                        .service(
+                            web::scope("/userspace")
+                                .wrap(CheckAuth)
+                                    .service(view_controller::main)
+                        )
+
             )
             .service(fs::Files::new("/public", "./azs_site/public/public").show_files_listing())
             .service(

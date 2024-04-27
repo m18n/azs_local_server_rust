@@ -24,11 +24,17 @@ pub async fn auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> Res
     let mut azs_db=state.azs_db.lock().await;
     let mut is_admin=false;
     let res=azs_db.checkAuth(auth_info.id_user,auth_info.password.clone(),&mut is_admin).await?;
-    let cookie = Cookie::build("refresh_token", create_token(auth_info.id_user,is_admin))
-        .path("/")
-        .http_only(true)
-        .finish();
-    let respon=HttpResponse::Ok().cookie(cookie).json(RequestResult {status:res});
-    Ok(respon)
+
+    if res==true {
+        let cookie = Cookie::build("refresh_token", create_token(auth_info.id_user, is_admin))
+            .path("/")
+            .http_only(true)
+            .finish();
+        let mut respon = HttpResponse::Ok().cookie(cookie).json(RequestResult { status: res });
+        Ok(respon)
+    }else{
+        let mut respon = HttpResponse::Ok().json(RequestResult { status: res });
+        Ok(respon)
+    }
 
 }

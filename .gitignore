@@ -25,3 +25,5 @@ Cargo.lock
 azs_db.db
 azs_db.db-shm
 azs_db.db-wal
+azs_db-shm
+azs_db-wal

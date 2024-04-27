@@ -76,7 +76,7 @@ function settings_db_error(){
         success: function(data){
             if(data["status"]==true){
 
-                document.location.href="/settings/dbproperties";
+                document.location.href="/view/login";
             }else{
                 console.log("Error send");
             }

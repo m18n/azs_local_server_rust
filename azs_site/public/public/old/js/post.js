@@ -1,13 +1,19 @@
 
 function auth(){
-    var formData =JSON.stringify($('#auth :input').serializeArray());
+    var json_input =$('#auth :input').serializeArray();
+   
+    var authdata = {
+        id_user: parseInt(json_input[0]["value"]),
+        password: json_input[1]["value"],
+    };
+    let formData=JSON.stringify(authdata);
     console.log(formData+"\n");
     $.ajax({
         type: "POST",
-        url: "/auth",
+        url: "/api/db/auth",
         data: formData,
         success: function(data){
-            if(data["status"]=="yes"){
+            if(data["status"]==true){
                 document.location.href = '/old/main';
             }else{
                 $(".status").text("STATUS: wrong password");

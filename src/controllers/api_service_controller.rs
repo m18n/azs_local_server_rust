@@ -3,15 +3,13 @@ use actix_web::web::Json;
 use ramhorns::Template;
 use serde::Serialize;
 use crate::base::file_openString;
+use crate::controllers::objects_of_controllers::{ RequestResult};
 use crate::globals::LOGS_DB_ERROR;
 use crate::models::{DbStatus, MyError, MysqlInfo, TypesStatus};
 use crate::render_temps::{ErrorDb, MysqlInfowithErrorDb};
 use crate::StateDb;
 
-#[derive(Serialize)]
-struct DbWriteResult{
-    status:bool,
-}
+
 //BASE URL /api
 #[get("/checkDbConnection")]
 pub async fn  check_db_connect(state: web::Data<StateDb>)-> Result<Json<DbStatus>, Error>
@@ -22,7 +20,7 @@ pub async fn  check_db_connect(state: web::Data<StateDb>)-> Result<Json<DbStatus
 
 }
 #[post("/setDbProperties")]
-pub async fn  set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Data<StateDb>)-> Result<Json<DbWriteResult>, Error>
+pub async fn  set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Data<StateDb>)-> Result<Json<RequestResult>, Error>
 {
    println!("{}",serde_json::to_string(&mysql_info).unwrap());
     tokio::spawn(async move {
@@ -37,12 +35,5 @@ pub async fn  set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Data
 
     });
 
-  Ok(web::Json(DbWriteResult{status:true}))
-}
-#[get("/testDb")]
-pub async fn test_request(state: web::Data<StateDb>)-> Result<Json<DbWriteResult>, Error>{
-
-    let mut azs_db=state.azs_db.lock().await;
-    azs_db.getUsers().await?;
-    Ok(web::Json(DbWriteResult{status:true}))
+  Ok(web::Json(RequestResult{status:true}))
 }

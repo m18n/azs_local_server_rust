@@ -13,8 +13,11 @@ use http::StatusCode;
 use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
 use serde::de::Unexpected::Str;
-use crate::globals::LOGS_DB_ERROR;
 
+use sqlx::mysql::MySqlQueryResult;
+use crate::globals::LOGS_DB_ERROR;
+use serde_json::Value::String as JsonString;
+use std::string::String;
 pub fn get_nowtime_str()->String{
     let current_datetime = Local::now();
 
@@ -75,7 +78,14 @@ impl ResponseError for MyError {
 pub struct User{
     id_user:i32,
     #[sqlx(rename = "user")]
-    name:String
+    name:String,
+    admin:bool
+}
+#[derive(Debug, Serialize, Deserialize, FromRow,Content)]
+pub struct UserDb{
+    id_user:i32,
+    #[sqlx(rename = "user")]
+    name:String,
 }
 #[derive(Debug, Serialize, Deserialize, FromRow,Clone,Content,PartialEq)]
 pub struct MysqlInfo{
@@ -159,14 +169,54 @@ impl AzsDb {
     }
     pub async fn getUsers(&mut self)-> Result<Vec<User>, MyError> {
 
-        let users= sqlx::query_as("SELECT * FROM loc_users INNER JOIN ref_users ON loc_users.id_user = ref_users.id_user;")
+        let users_db:Vec<UserDb>= sqlx::query_as("SELECT * FROM loc_users INNER JOIN ref_users ON loc_users.id_user = ref_users.id_user;")
             .fetch_all(self.mysql.as_ref().unwrap())
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
                 MyError::DatabaseError(str_error)
             })?;
+        let mut users:Vec<User>=Vec::with_capacity(users_db.len());
+        for item in users_db{
+            let mut user_ =User{id_user:item.id_user,name:item.name,admin:false};
+            if user_.id_user >= 1000000{
+                user_.admin=true;
+            }
+            users.push(user_);
+        }
         Ok(users)
+    }
+    pub async fn checkAuth(&mut self,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
+        let passwords:Vec<String>= sqlx::query_scalar::<_,String>("SELECT password FROM loc_users WHERE id_user=?;")
+            .bind(id_user)
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        if !passwords.is_empty() && passwords[0]==password{
+            if id_user>= 1000000 {
+                *is_admin = true;
+            }
+            Ok(true)
+        }else{
+            Ok(false)
+        }
+
+        // let users= sqlx::query("SELECT * FROM loc_users INNER JOIN ref_users ON loc_users.id_user = ref_users.id_user;")
+        //     .execute(self.mysql.as_ref().unwrap())
+        //     .await;
+        // match users {
+        //     Ok(_) => {
+        //         Ok(true)
+        //     }
+        //     Err(e) => {
+        //         let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+        //         Err(MyError::DatabaseError(str_error))
+        //     }
+        // }
+
     }
     pub fn getDbStatus(&self)->DbStatus{
         if(self.mysql.is_none()){

@@ -21,3 +21,7 @@ Cargo.lock
 
 # Ігнорування файлів з секретами
 /.env
+
+azs_db.db
+azs_db.db-shm
+azs_db.db-wal

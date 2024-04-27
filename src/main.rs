@@ -8,6 +8,7 @@ mod base;
 mod controllers;
 mod globals;
 mod check_db_api_middleware;
+mod jwt;
 
 
 use std::sync::Arc;
@@ -90,20 +91,20 @@ async fn main() -> std::io::Result<()> {
             .service(fs::Files::new("/public", "./azs_site/public/public").show_files_listing())
             .service(
                 web::scope("/settings")
-                    .service(api_db_controller::show_error)
-                    .service(api_db_controller::show_properties)
-
+                    .service(settings_controller::show_error)
+                    .service(settings_controller::show_properties)
             )
             .service(
                 web::scope("/api/service")
-                    .service(api_controller::check_db_connect)
-                    .service(api_controller::set_db_properties)
+                    .service(api_service_controller::check_db_connect)
+                    .service(api_service_controller::set_db_properties)
 
             )
             .service(
                 web::scope("/api/db")
                     .wrap(CheckDbApi)
-                        .service(api_controller::test_request)
+                        .service(api_db_controller::test_request)
+                        .service(api_db_controller::auth)
             )
             .service(
                 web::scope("/api/localdb")

@@ -1,4 +1,5 @@
 use std::cmp::PartialEq;
+use std::ffi::c_double;
 use std::sync::Arc;
 use actix_web::{HttpResponse, ResponseError, web};
 use ramhorns::{Content, Template};
@@ -86,6 +87,68 @@ pub struct UserDb{
     id_user:i32,
     #[sqlx(rename = "user")]
     name:String,
+}
+#[derive(Debug, Serialize, Deserialize, FromRow,Content,Clone)]
+pub struct ScreenSize{
+    pub width:i32,
+    pub height:i32,
+}
+#[derive(Debug, Serialize, Deserialize, FromRow,Content)]
+pub struct Tank{
+    pub id_tank:i32,
+    pub id_tovar:i32,
+    pub volume:i32,
+    pub remain:i32,
+}
+#[derive(sqlx::FromRow, Debug,Serialize, Deserialize)]
+pub struct TrkDb {
+    id_trk: i32,
+    x_pos: i32,
+    y_pos: i32,
+    scale: f64,
+    id_pist: i32,
+    id_tank: i32,
+}
+#[derive(Serialize, Debug, Deserialize)]
+pub struct Pist {
+    pub id_pist: i32,
+    pub id_tank: i32,
+}
+#[derive(sqlx::FromRow, Debug,Serialize, Deserialize)]
+pub struct Trk {
+    pub nn:i32,
+    pub id_trk: i32,
+    pub x_pos: i32,
+    pub y_pos: i32,
+    pub scale: f64,
+    pub pists: Vec<Pist>,
+}
+
+#[derive(sqlx::FromRow, Debug,Serialize, Deserialize)]
+pub struct TovarDb {
+    id_tovar:i32,
+    price: f32,
+    name: String,
+    name_p: String,
+    name_p_f: String,
+    name_p_v:String,
+    color:i32,
+}
+#[derive(Debug,Serialize, Deserialize)]
+pub struct Color{
+    pub r:u8,
+    pub g:u8,
+    pub b:u8
+}
+#[derive(Debug,Serialize, Deserialize)]
+pub struct Tovar {
+    pub id_tovar:i32,
+    pub price: f32,
+    pub name: String,
+    pub name_p: String,
+    pub name_p_f: String,
+    pub name_p_v:String,
+    pub color:Color
 }
 #[derive(Debug, Serialize, Deserialize, FromRow,Clone,Content,PartialEq)]
 pub struct MysqlInfo{
@@ -186,6 +249,81 @@ impl AzsDb {
         }
         Ok(users)
     }
+    pub async fn getTanks(&mut self)-> Result<Vec<Tank>, MyError> {
+
+        let tanks:Vec<Tank>= sqlx::query_as("SELECT * FROM tank ORDER BY NN;")
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+
+        Ok(tanks)
+    }
+    pub async fn getTovars(&mut self)->Result<Vec<Tovar>,MyError>{
+        let query = r#"
+            SELECT * FROM tovar ORDER BY NN;
+        "#;
+
+        let tovars_db:Vec<TovarDb>= sqlx::query_as(query)
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        let mut tovars=Vec::with_capacity(tovars_db.len());
+        if tovars_db.is_empty()
+        {
+            return Ok(tovars);
+        }
+
+        for item in tovars_db{
+            let red = ((item.color >> 16) & 0xFF) as u8;
+            let green = ((item.color >> 8) & 0xFF) as u8;
+            let blue = (item.color & 0xFF) as u8;
+            tovars.push(Tovar{id_tovar:item.id_tovar,price:item.price,name:item.name,name_p:item.name_p,name_p_f:item.name_p_f,name_p_v:item.name_p_v,
+            color:Color{r:red,g:green,b:blue}});
+        }
+        Ok(tovars)
+    }
+    pub async fn getTrks(&mut self)-> Result<Vec<Trk>, MyError> {
+        let query = r#"
+            SELECT com_trk.id_trk, com_trk.x_pos, com_trk.y_pos, com_trk.scale,
+                   trk.id_trk as trk_id_trk, trk.id_pist, trk.id_tank
+            FROM com_trk
+            INNER JOIN trk ON com_trk.id_trk = trk.id_trk
+            ORDER BY com_trk.id_trk;
+        "#;
+
+        let trks_db:Vec<TrkDb>= sqlx::query_as(query)
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        println!("TRKS_DB: {:?}",&trks_db);
+        let mut trks=Vec::with_capacity(trks_db.len());
+        if trks_db.is_empty()
+        {
+            return Ok(trks);
+        }
+        let mut last_id:i32=-1;
+        let mut n=0;
+
+        for item in trks_db{
+
+            if(last_id!=item.id_trk) {
+                n += 1;
+                trks.push(Trk { nn: n, id_trk: item.id_trk, x_pos: item.x_pos, y_pos: item.y_pos, scale: item.scale, pists: Vec::new() });
+            }
+            trks.last_mut().unwrap().pists.push(Pist{id_pist:item.id_pist,id_tank:item.id_tank});
+            last_id=item.id_trk;
+        }
+        Ok(trks)
+    }
     pub async fn checkAuth(&mut self,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
         let passwords:Vec<String>= sqlx::query_scalar::<_,String>("SELECT password FROM loc_users WHERE id_user=?;")
             .bind(id_user)
@@ -217,6 +355,34 @@ impl AzsDb {
         //     }
         // }
 
+    }
+    pub async fn getScreenSize(&self)->Result<ScreenSize, MyError>{
+        let screen_size:Vec<String>= sqlx::query_scalar::<_,String>("SELECT value FROM loc_const WHERE descr_var=\"cnst_ScreenSize\";;")
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        let mut screen_empty=ScreenSize{width:0,height:0};
+        if !screen_size.is_empty(){
+            let parts: Vec<&str> = screen_size[0].split(',').collect();
+            if parts.len()!=2{
+                let str_error = format!("MYSQL|| {} error: PARSE SCREEN  \n", get_nowtime_str());
+                return Err(MyError::DatabaseError(str_error));
+            }
+            screen_empty.width=parts[0].parse::<i32>().map_err(|e| {
+                let str_error = format!("MYSQL|| {} error: PARSE SCREEN WIDTH ERROR \n", get_nowtime_str());
+                MyError::DatabaseError(str_error)
+            }).unwrap_or(0);
+            screen_empty.height=parts[0].parse::<i32>().map_err(|e| {
+                let str_error = format!("MYSQL|| {} error: PARSE SCREEN HEIGHT ERROR \n", get_nowtime_str());
+                MyError::DatabaseError(str_error)
+            }).unwrap_or(0);
+            Ok(screen_empty)
+        }else{
+            Ok(screen_empty)
+        }
     }
     pub fn getDbStatus(&self)->DbStatus{
         if(self.mysql.is_none()){

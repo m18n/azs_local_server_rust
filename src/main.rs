@@ -81,38 +81,45 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::clone(&state))
             .wrap(NoCache)
-
+            .service(
+                web::scope("/").wrap(CheckDbView).wrap(CheckAuth)
+                .service(core_logic_controller::m_global_main)
+            )
             .service(
                 SwaggerUi::new("/docs/{_:.*}").url("/api-docs/openapi.json", ApiDoc::openapi()),
             )
             .service(
-                web::scope("/view/old")
+                web::scope("/view")
                     .wrap(CheckDbView)
-                        .service(view_controller::login)
-                        .service(
-                            web::scope("/userspace")
-                                .wrap(CheckAuth)
-                                    .service(view_controller::main)
-                        )
+                        .service(view_old_controller::m_login)
+                    .service(
+                        web::scope("/userspace")
+                            .wrap(CheckAuth)
+                            .service(
+                                web::scope("/old")
+                                    .service(view_old_controller::m_main)
+                            )
+                    )
+
 
             )
             .service(fs::Files::new("/public", "./azs_site/public/public").show_files_listing())
             .service(
                 web::scope("/settings")
-                    .service(settings_controller::show_error)
-                    .service(settings_controller::show_properties)
+                    .service(settings_controller::m_show_error)
+                    .service(settings_controller::m_show_properties)
             )
             .service(
                 web::scope("/api/service")
-                    .service(api_service_controller::check_db_connect)
-                    .service(api_service_controller::set_db_properties)
+                    .service(api_service_controller::m_check_db_connect)
+                    .service(api_service_controller::m_set_db_properties)
 
             )
             .service(
                 web::scope("/api/db")
                     .wrap(CheckDbApi)
-                        .service(api_db_controller::test_request)
-                        .service(api_db_controller::auth)
+                        .service(api_db_controller::m_test_request)
+                        .service(api_db_controller::m_auth)
             )
             .service(
                 web::scope("/api/localdb")

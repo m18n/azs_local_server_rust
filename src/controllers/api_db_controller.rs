@@ -12,14 +12,14 @@ use crate::render_temps;
 use crate::StateDb;
 //BASE URL /api/db
 #[get("/testDb")]
-pub async fn test_request(state: web::Data<StateDb>)-> Result<Json<RequestResult>, Error>{
+pub async fn m_test_request(state: web::Data<StateDb>)-> Result<Json<RequestResult>, Error>{
 
     let mut azs_db=state.azs_db.lock().await;
     azs_db.getUsers().await?;
     Ok(web::Json(RequestResult {status:true}))
 }
 #[post("/auth")]
-pub async fn auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+pub async fn m_auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
 
     let mut azs_db=state.azs_db.lock().await;
     let mut is_admin=false;

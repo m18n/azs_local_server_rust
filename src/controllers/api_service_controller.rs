@@ -12,7 +12,7 @@ use crate::StateDb;
 
 //BASE URL /api
 #[get("/checkDbConnection")]
-pub async fn  check_db_connect(state: web::Data<StateDb>)-> Result<Json<DbStatus>, Error>
+pub async fn  m_check_db_connect(state: web::Data<StateDb>)-> Result<Json<DbStatus>, Error>
 {
     let mut azs_db=state.azs_db.lock().await;
 
@@ -20,7 +20,7 @@ pub async fn  check_db_connect(state: web::Data<StateDb>)-> Result<Json<DbStatus
 
 }
 #[post("/setDbProperties")]
-pub async fn  set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Data<StateDb>)-> Result<Json<RequestResult>, Error>
+pub async fn  m_set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Data<StateDb>)-> Result<Json<RequestResult>, Error>
 {
    println!("{}",serde_json::to_string(&mysql_info).unwrap());
     tokio::spawn(async move {

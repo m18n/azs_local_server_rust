@@ -4,7 +4,7 @@ use std::os::linux::raw::stat;
 use std::pin::Pin;
 use std::rc::Rc;
 
-use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, Either, Error, HttpResponse, ResponseError, web};
+use actix_web::{dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform}, Either, Error, HttpMessage, HttpResponse, ResponseError, web};
 use actix_web::body::{EitherBody, MessageBody};
 use actix_web::cookie::Cookie;
 use actix_web::http::header;
@@ -64,14 +64,15 @@ fn extract_cookie(req: &ServiceRequest, cookie_name: &str) -> Option<String> {
                 })
         })
 }
-fn validate_token(token:String) -> bool {
+fn validate_token(token:String, is_admin: &mut bool) -> bool {
 
     let decoding_key = DecodingKey::from_secret("secret".as_ref());
     let validation = Validation::default();
-
+    *is_admin=false;
     match decode::<Claims>(token.as_str(), &decoding_key, &validation) {
         Ok(data) => {
             if data.claims.exp > Utc::now().timestamp() as usize {
+                *is_admin=data.claims.admin;
                 true
             } else {
                 false
@@ -107,7 +108,7 @@ impl<S, B> Service<ServiceRequest> for CheckAuthMiddleware<S>
                 .http_only(true)
                 .finish();
             let response = HttpResponse::Found()
-                .insert_header((http::header::LOCATION, "/view/old/login")).cookie(cookie)
+                .insert_header((http::header::LOCATION, "/view/login")).cookie(cookie)
                 .finish().map_into_right_body();
             match token {
                 None => {
@@ -115,8 +116,9 @@ impl<S, B> Service<ServiceRequest> for CheckAuthMiddleware<S>
                     Ok(ServiceResponse::new(req.into_parts().0, response))
                 }
                 Some(some) => {
-
-                        if validate_token(some)==true {
+                        let mut is_admin=false;
+                        if validate_token(some,&mut is_admin)==true {
+                            req.extensions_mut().insert(is_admin);
                             service.call(req).await.map(ServiceResponse::map_into_left_body)
                         }else{
                             Ok(ServiceResponse::new(req.into_parts().0, response))

@@ -30,24 +30,24 @@
                 <button>SAVE</button>
             </div>
             {{/admin}}
-            {{#pump}}
-            <div class="dispensing_unit " onmousedown="MouseClick(this);" value="{{id}}" style="left:{{x_pos}}vw;top:{{y_pos}}vw; width: {{scale}}vw; height: {{scale}}vw;" id="unit_shab" >
+            {{#trks}}
+            <div class="dispensing_unit " onmousedown="MouseClick(this);" value="{{nn}}" style="left:{{x_pos}}vw;top:{{y_pos}}vw; width: {{scale}}vw; height: {{scale}}vw;" id="unit_shab" >
                 {{^admin}}
                 <div class="bl black" id="#black"></div>
                 {{/admin}}
                 <div class="unit_menu">
                     <div class="gasoline" >
                 
-                        {{#pist}}
+                        {{#pists}}
                        
                         <button value="{{price}}" id="pistolet" class="pistol" xvalue="rgb({{r}},{{g}},{{b}})" style="background-color: rgb({{r}}, {{g}}, {{b}});"   onclick="selectpistol(this);">{{name}}</button>
                         <!-- <button>95e</button>
                         <button>95e</button>
                         <button>95e</button>
                         <button>95e</button> -->
-                        {{/pist}}
+                        {{/pists}}
                     </div>
-                    <span id="inex_unit">{{id}}</span>
+                    <span id="inex_unit">{{nn}}</span>
                 </div>
                 <div class="unit_content">
                     <div class="calculator">
@@ -152,7 +152,7 @@
                     </div>
                 </div>
             </div>
-            {{/pump}}
+            {{/trks}}
         <div class="menu" onmouseleave="HideMenu(this);">
             <div class="region" >
                 <div class="min_menu" id="min_menu"  onmouseenter="ShowMenu(this);">

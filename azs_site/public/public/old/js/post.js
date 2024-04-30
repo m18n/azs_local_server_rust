@@ -14,7 +14,7 @@ function auth(){
         data: formData,
         success: function(data){
             if(data["status"]==true){
-                document.location.href = '/view/old/userspace/main';
+                document.location.href = '/view/userspace/old/main';
             }else{
                 $(".status").text("STATUS: wrong password");
             }
@@ -76,7 +76,7 @@ function settings_db_error(){
         success: function(data){
             if(data["status"]==true){
 
-                document.location.href="/view/old/login";
+                document.location.href="/view/login";
             }else{
                 console.log("Error send");
             }

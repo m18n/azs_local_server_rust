@@ -19,6 +19,8 @@ use sqlx::mysql::MySqlQueryResult;
 use crate::globals::LOGS_DB_ERROR;
 use serde_json::Value::String as JsonString;
 use std::string::String;
+use futures_util::future::join_all;
+
 pub fn get_nowtime_str()->String{
     let current_datetime = Local::now();
 
@@ -123,7 +125,18 @@ pub struct Trk {
     pub scale: f64,
     pub pists: Vec<Pist>,
 }
-
+#[derive(Debug,Deserialize,Serialize,Clone)]
+pub struct PositionTrk{
+    pub id:i32,
+    pub x:f32,
+    pub y:f32,
+    pub scale:f32,
+}
+#[derive(Debug,Deserialize,Serialize,Clone)]
+pub struct SaveTrksPosition{
+    screen_scale:ScreenSize,
+    objects: Vec<PositionTrk>
+}
 #[derive(sqlx::FromRow, Debug,Serialize, Deserialize)]
 pub struct TovarDb {
     id_tovar:i32,
@@ -333,6 +346,62 @@ impl AzsDb {
             last_id=item.id_trk;
         }
         Ok(trks)
+    }
+    pub async fn saveTrkPosition(azs_db:Arc<Mutex<AzsDb>>,trk_pos:PositionTrk,screen_size: ScreenSize)->Result<bool, MyError>{
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let screen_width_f=screen_size.width as f32;
+        let x_pos_f=screen_width_f/(100.0/trk_pos.x);
+        let y_pos_f=screen_width_f/(100.0/trk_pos.y);
+        let x_pos:i32=x_pos_f as i32;
+        let y_pos:i32=y_pos_f as i32;
+        let users= sqlx::query("UPDATE com_trk SET scale=?, x_pos=?, y_pos=? WHERE id_trk=?;")
+            .bind(trk_pos.scale)
+            .bind(x_pos)
+            .bind(y_pos)
+            .bind(trk_pos.id)
+            .execute(&mysqlpool)
+            .await;
+        match users {
+            Ok(_) => {
+                Ok(true)
+            }
+            Err(e) => {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                Err(MyError::DatabaseError(str_error))
+            }
+        }
+    }
+    pub async fn saveTrksPosition(azs_db:Arc<Mutex<AzsDb>>,trks_pos:SaveTrksPosition)->Result<bool, MyError>{
+        Self::setScreenSize(azs_db.clone(),trks_pos.screen_scale.clone()).await?;
+        let mut vector_tasks =Vec::new();
+        for element in trks_pos.objects{
+            vector_tasks.push(Self::saveTrkPosition(azs_db.clone(),element.clone(),trks_pos.screen_scale.clone()));
+        }
+        let results=join_all(vector_tasks).await;
+        for res in results{
+            res?;
+        }
+       Ok(true)
+    }
+    pub async fn setScreenSize(azs_db:Arc<Mutex<AzsDb>>,screen_size: ScreenSize)->Result<bool, MyError>{
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let query=format!("UPDATE loc_const SET value=\"{},{}\" WHERE descr_var=\"cnst_ScreenSize\";",screen_size.width,screen_size.height);
+        let res= sqlx::query(query.as_str())
+            .execute(&mysqlpool)
+            .await;
+        match res {
+            Ok(_) => {
+                Ok(true)
+            }
+            Err(e) => {
+                let str_error = format!("MYSQL|| {} error: SET SCREEEN SIZE \n", get_nowtime_str());
+                Err(MyError::DatabaseError(str_error))
+            }
+        }
     }
     pub async fn checkAuth(azs_db:Arc<Mutex<AzsDb>>,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
         let azs_db=azs_db.lock().await;

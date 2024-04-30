@@ -113,6 +113,7 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/api/service")
                     .service(api_service_controller::m_check_db_connect)
                     .service(api_service_controller::m_set_db_properties)
+                    .service(api_service_controller::m_out_auth)
 
             )
             .service(
@@ -120,6 +121,11 @@ async fn main() -> std::io::Result<()> {
                     .wrap(CheckDbApi)
                         .service(api_db_controller::m_test_request)
                         .service(api_db_controller::m_auth)
+                    .service(
+                        web::scope("/userspace")
+                            .wrap(CheckAuth)
+                            .service(api_db_controller::m_save_trks_position)
+                    )
             )
             .service(
                 web::scope("/api/localdb")

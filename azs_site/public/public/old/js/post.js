@@ -89,9 +89,10 @@ function settings_db_error(){
 }
 
 function save_pump(json_object){
+    console.log("JSON: "+json_object);
     $.ajax({
         type: "POST",
-        url: "/api/trk/save",
+        url: "/api/db/userspace/saveTrksPosition",
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         data: json_object,

@@ -23,7 +23,7 @@ $(".save_admin").click(function () {
         console.log("XX: "+x+" YY: "+y);
         let scale =array[i].style.width.slice(0,-2);// ($(array[i]).width() + 4.2) / 3
         console.log("WIDTH: "+scale);
-        objects[i]={id:$(array[i]).attr('value'),"x":x,"y":y,"scale":scale};
+        objects[i]={id:parseInt($(array[i]).attr('value')),"x":parseFloat(x),"y":parseFloat(y),"scale":parseFloat(scale)};
         
     }
     let json = JSON.stringify(json_object); 

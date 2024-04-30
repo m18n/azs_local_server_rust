@@ -4,11 +4,12 @@ use actix_web::web::Json;
 use ramhorns::Template;
 use crate::base::file_openString;
 
-use crate::controllers::objects_of_controllers::{AuthInfo,  RequestResult};
+use crate::controllers::objects_of_controllers::{AuthInfo, RequestResult};
 use crate::globals::LOGS_DB_ERROR;
 use crate::jwt::create_token;
-use crate::models::{AzsDb, MysqlInfo};
+use crate::models::{AzsDb, MyError, MysqlInfo, SaveTrksPosition};
 use crate::render_temps;
+use crate::render_temps::MainTemplate;
 use crate::StateDb;
 //BASE URL /api/db
 #[get("/testDb")]
@@ -36,4 +37,13 @@ pub async fn m_auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> R
         Ok(respon)
     }
 
+}
+
+#[post("/saveTrksPosition")]
+pub async fn m_save_trks_position(trks_position:web::Json<SaveTrksPosition>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+
+    println!("TRK POSITON: {:?}\n",&trks_position);
+    let res=AzsDb::saveTrksPosition(state.azs_db.clone(),trks_position.into_inner()).await?;
+    let mut respon = HttpResponse::Ok().json(RequestResult { status: res});
+    Ok(respon)
 }

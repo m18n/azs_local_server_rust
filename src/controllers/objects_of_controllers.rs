@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::models::ScreenSize;
 
 #[derive(Deserialize,Serialize)]
 pub struct RequestResult{

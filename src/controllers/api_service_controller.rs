@@ -1,10 +1,12 @@
 use actix_web::{Error, get, HttpResponse, post, Responder, web};
+use actix_web::cookie::Cookie;
 use actix_web::web::Json;
 use ramhorns::Template;
 use serde::Serialize;
 use crate::base::file_openString;
 use crate::controllers::objects_of_controllers::{ RequestResult};
 use crate::globals::LOGS_DB_ERROR;
+use crate::jwt::create_token;
 use crate::models::{DbStatus, MyError, MysqlInfo, TypesStatus};
 use crate::render_temps::{ErrorDb, MysqlInfowithErrorDb};
 use crate::StateDb;
@@ -36,4 +38,16 @@ pub async fn  m_set_db_properties(mysql_info:web::Json<MysqlInfo>,state: web::Da
     });
 
   Ok(web::Json(RequestResult{status:true}))
+}
+#[get("/outauth")]
+pub async fn  m_out_auth(state: web::Data<StateDb>)-> Result<HttpResponse, Error>
+{
+    let cookie = Cookie::build("refresh_token", "")
+        .path("/")
+        .http_only(true)
+        .finish();
+    let response = HttpResponse::Found()
+        .insert_header((http::header::LOCATION, "/view/login")).cookie(cookie)
+        .finish();
+    Ok(response)
 }

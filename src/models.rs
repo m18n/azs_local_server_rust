@@ -230,10 +230,12 @@ impl AzsDb {
         self.is_connecting=false;
         Ok(!self.mysql.is_none())
     }
-    pub async fn getUsers(&mut self)-> Result<Vec<User>, MyError> {
-
+    pub async fn getUsers(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<User>, MyError> {
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let users_db:Vec<UserDb>= sqlx::query_as("SELECT * FROM loc_users INNER JOIN ref_users ON loc_users.id_user = ref_users.id_user;")
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
@@ -249,10 +251,12 @@ impl AzsDb {
         }
         Ok(users)
     }
-    pub async fn getTanks(&mut self)-> Result<Vec<Tank>, MyError> {
-
+    pub async fn getTanks(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<Tank>, MyError> {
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let tanks:Vec<Tank>= sqlx::query_as("SELECT * FROM tank ORDER BY NN;")
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
@@ -261,13 +265,16 @@ impl AzsDb {
 
         Ok(tanks)
     }
-    pub async fn getTovars(&mut self)->Result<Vec<Tovar>,MyError>{
+    pub async fn getTovars(azs_db:Arc<Mutex<AzsDb>>)->Result<Vec<Tovar>,MyError>{
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let query = r#"
             SELECT * FROM tovar ORDER BY NN;
         "#;
 
         let tovars_db:Vec<TovarDb>= sqlx::query_as(query)
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
@@ -288,7 +295,10 @@ impl AzsDb {
         }
         Ok(tovars)
     }
-    pub async fn getTrks(&mut self)-> Result<Vec<Trk>, MyError> {
+    pub async fn getTrks(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<Trk>, MyError> {
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let query = r#"
             SELECT com_trk.id_trk, com_trk.x_pos, com_trk.y_pos, com_trk.scale,
                    trk.id_trk as trk_id_trk, trk.id_pist, trk.id_tank
@@ -298,13 +308,13 @@ impl AzsDb {
         "#;
 
         let trks_db:Vec<TrkDb>= sqlx::query_as(query)
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
                 MyError::DatabaseError(str_error)
             })?;
-        println!("TRKS_DB: {:?}",&trks_db);
+
         let mut trks=Vec::with_capacity(trks_db.len());
         if trks_db.is_empty()
         {
@@ -324,10 +334,13 @@ impl AzsDb {
         }
         Ok(trks)
     }
-    pub async fn checkAuth(&mut self,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
+    pub async fn checkAuth(azs_db:Arc<Mutex<AzsDb>>,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let passwords:Vec<String>= sqlx::query_scalar::<_,String>("SELECT password FROM loc_users WHERE id_user=?;")
             .bind(id_user)
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
@@ -356,9 +369,12 @@ impl AzsDb {
         // }
 
     }
-    pub async fn getScreenSize(&self)->Result<ScreenSize, MyError>{
+    pub async fn getScreenSize(azs_db:Arc<Mutex<AzsDb>>)->Result<ScreenSize, MyError>{
+        let azs_db=azs_db.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
         let screen_size:Vec<String>= sqlx::query_scalar::<_,String>("SELECT value FROM loc_const WHERE descr_var=\"cnst_ScreenSize\";;")
-            .fetch_all(self.mysql.as_ref().unwrap())
+            .fetch_all(&mysqlpool)
             .await
             .map_err( |e|  {
                 let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());

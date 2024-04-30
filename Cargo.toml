@@ -13,7 +13,7 @@ ramhorns = "0.14.0"
 serde = "1.0.197"
 sqlx = { version = "0.7.4", features = ["mysql", "runtime-tokio-rustls", "sqlite"] }
 thiserror = "1.0.58"
-tokio = "1.36.0"
+tokio = { version = "1.36.0", features = ["full"] }
 http = "0.2.12"
 chrono = "0.4.35"
 actix-service = "2.0.2"

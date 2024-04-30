@@ -3,14 +3,14 @@ use actix_web::{get, HttpRequest, HttpResponse, Responder, web};
 use ramhorns::Template;
 use crate::base::file_openString;
 use crate::controllers::core_logic_controller::{start_controller, wrap_handler};
-use crate::models::{get_nowtime_str, MyError, Pist, ScreenSize, Tank, Tovar, Trk};
+use crate::models::{AzsDb, get_nowtime_str, MyError, Pist, ScreenSize, Tank, Tovar, Trk};
 use crate::render_temps::{AuthTemplate, ErrorDb, MainTemplate, MysqlInfowithErrorDb, PistForTemplate, TrkForTemplate};
 use crate::{main, StateDb};
 //BASE URL /view/old
 #[get("/login")]
 pub async fn m_login(state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
-    let mut azs_db=state.azs_db.lock().await;
-    let users = azs_db.getUsers().await?;
+
+    let users = AzsDb::getUsers(state.azs_db.clone()).await?;
     let auth = AuthTemplate {
         smena: true,
         users: users
@@ -71,30 +71,30 @@ async fn get_trks_for_template(tovars: &Vec<Tovar>, tanks: &Vec<Tank>, trks: &Ve
     Ok(trks_template)
 }
 pub async fn a_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
-    let mut azs_db=state.azs_db.lock().await;
-    let screen=azs_db.getScreenSize().await?;
-    let tovars=azs_db.getTovars().await?;
-    let tanks=azs_db.getTanks().await?;
-    let trks=azs_db.getTrks().await?;
+    let (screen_result, tovars_result, tanks_result, trks_result) = tokio::join!(AzsDb::getScreenSize(state.azs_db.clone()),
+        AzsDb::getTovars(state.azs_db.clone()), AzsDb::getTanks(state.azs_db.clone()), AzsDb::getTrks(state.azs_db.clone()));
+    let screen = screen_result?;
+    let tovars = tovars_result?;
+    let tanks = tanks_result?;
+    let trks = trks_result?;
     let trks_for_template=get_trks_for_template(&tovars,&tanks,&trks,screen.clone()).await?;
     let main_template=MainTemplate{
         admin:true,
         screen_width:screen.width,
         trks:trks_for_template
     };
-    let tovars=azs_db.getTovars().await?;
-    println!("TOVARS: {:?}",&tovars);
     let contents = file_openString("./azs_site/public/public/old/serv.html").await;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&main_template)))
 }
 pub async fn u_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
-    let mut azs_db=state.azs_db.lock().await;
-    let screen=azs_db.getScreenSize().await?;
-    let tovars=azs_db.getTovars().await?;
-    let tanks=azs_db.getTanks().await?;
-    let trks=azs_db.getTrks().await?;
-   
+
+    let (screen_result, tovars_result, tanks_result, trks_result) = tokio::join!(AzsDb::getScreenSize(state.azs_db.clone()),
+        AzsDb::getTovars(state.azs_db.clone()), AzsDb::getTanks(state.azs_db.clone()), AzsDb::getTrks(state.azs_db.clone()));
+    let screen = screen_result?;
+    let tovars = tovars_result?;
+    let tanks = tanks_result?;
+    let trks = trks_result?;
     let trks_for_template=get_trks_for_template(&tovars,&tanks,&trks,screen.clone()).await?;
     let main_template=MainTemplate{
         admin:false,

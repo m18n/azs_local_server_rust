@@ -7,6 +7,10 @@ pub struct AuthTemplate {
     pub users: Vec<User>,
 }
 #[derive(Content)]
+pub struct AdminTemplate {
+    pub admin:bool
+}
+#[derive(Content)]
 pub struct PistForTemplate {
     pub id_pist: i32,
     pub id_tank: i32,

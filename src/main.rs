@@ -10,6 +10,7 @@ mod globals;
 mod check_db_api_middleware;
 mod jwt;
 mod check_auth_middleware;
+mod check_auth_only_admin_middleware;
 
 
 use std::sync::Arc;
@@ -26,6 +27,7 @@ use crate::models::{AzsDb, get_nowtime_str, local_getMysqlInfo, local_io_getMysq
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 use crate::check_auth_middleware::CheckAuth;
+use crate::check_auth_only_admin_middleware::CheckAuthOnlyAdmin;
 use crate::check_db_api_middleware::CheckDbApi;
 //use crate::logger::LogManager;
 use crate::swagger_docs::ApiDoc;
@@ -98,6 +100,7 @@ async fn main() -> std::io::Result<()> {
                             .service(
                                 web::scope("/old")
                                     .service(view_old_controller::m_main)
+                                    .service(view_old_controller::m_main_settings)
                             )
                     )
 
@@ -123,8 +126,20 @@ async fn main() -> std::io::Result<()> {
                         .service(api_db_controller::m_auth)
                     .service(
                         web::scope("/userspace")
-                            .wrap(CheckAuth)
-                            .service(api_db_controller::m_save_trks_position)
+                            .service(
+                                web::scope("/admin")
+                                    .wrap(CheckAuthOnlyAdmin)
+                                    .service(api_db_controller::m_save_trks_position)
+                            )
+                            .service(
+                                web::scope("/user")
+
+                            )
+                            .service(
+                                web::scope("/all")
+                                    .wrap(CheckAuth)
+                                    .service(api_db_controller::m_out_shift)
+                            )
                     )
             )
             .service(

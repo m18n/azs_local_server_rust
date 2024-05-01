@@ -4,18 +4,27 @@ use ramhorns::Template;
 use crate::base::file_openString;
 use crate::controllers::core_logic_controller::{start_controller, wrap_handler};
 use crate::models::{AzsDb, get_nowtime_str, MyError, Pist, ScreenSize, Tank, Tovar, Trk};
-use crate::render_temps::{AuthTemplate, ErrorDb, MainTemplate, MysqlInfowithErrorDb, PistForTemplate, TrkForTemplate};
+use crate::render_temps::{AdminTemplate, AuthTemplate, ErrorDb, MainTemplate, MysqlInfowithErrorDb, PistForTemplate, TrkForTemplate};
 use crate::{main, StateDb};
 //BASE URL /view/old
 #[get("/login")]
 pub async fn m_login(state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
-
-    let users = AzsDb::getUsers(state.azs_db.clone()).await?;
+    let mut id_user_smena=0;
+    let smena=AzsDb::getSmena(state.azs_db.clone()).await?;
+    let mut users = AzsDb::getUsers(state.azs_db.clone()).await?;
+    for i in 0..users.len(){
+        if users[i].id_user==smena.id_user{
+            let temp=users[0].clone();
+            users[0]=users[i].clone();
+            users[i]=temp;
+            break;
+        }
+    }
     let auth = AuthTemplate {
-        smena: true,
+        smena: smena.status,
         users: users
     };
-    let contents = file_openString("./azs_site/public/public/old/login.html").await;
+    let contents = file_openString("./azs_site/public/public/old/login.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&auth)))
 }
@@ -83,7 +92,7 @@ pub async fn a_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
         screen_width:screen.width,
         trks:trks_for_template
     };
-    let contents = file_openString("./azs_site/public/public/old/serv.html").await;
+    let contents = file_openString("./azs_site/public/public/old/serv.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&main_template)))
 }
@@ -101,27 +110,29 @@ pub async fn u_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
         screen_width:screen.width,
         trks:trks_for_template
     };
-    let contents = file_openString("./azs_site/public/public/old/serv.html").await;
+    let contents = file_openString("./azs_site/public/public/old/serv.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&main_template)))
 }
 
 #[get("/main")]
 pub async fn m_main(req:HttpRequest,state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
-    //let mut azs_db=state.azs_db.lock().await;
-    // let users = azs_db.getUsers().await?;
-    // let auth = AuthTemplate {
-    //     smena: true,
-    //     users: users
-    // };
-    // let screen=azs_db.getScreenSize().await?;
-    // let tanks=azs_db.getTanks().await?;
-    // println!("SCREEN: {:?}",&screen);
-    // println!("TANKS: {:?}",&tanks);
     start_controller(wrap_handler(a_main), wrap_handler(u_main),&req,state.clone()).await
-    //let trks=azs_db.getTrks().await?;
-    // println!("TANKS: {:?}",&trks);
-    // let contents = file_openString("./azs_site/public/public/old/serv.html").await;
-    // //let tpl = Template::new(contents).unwrap();
-    // Ok(HttpResponse::Ok().content_type("text/html").body(contents))
+}
+pub async fn a_main_settings(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
+    let admin_template=AdminTemplate{admin:true};
+    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
+    let tpl = Template::new(contents).unwrap();
+    Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
+}
+pub async fn u_main_settings(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
+    let admin_template=AdminTemplate{admin:false};
+    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
+    let tpl = Template::new(contents).unwrap();
+    Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
+}
+
+#[get("/main/settings")]
+pub async fn m_main_settings(req:HttpRequest,state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
+    start_controller(wrap_handler(a_main_settings), wrap_handler(u_main_settings),&req,state.clone()).await
 }

@@ -92,7 +92,7 @@ function save_pump(json_object){
     console.log("JSON: "+json_object);
     $.ajax({
         type: "POST",
-        url: "/api/db/userspace/saveTrksPosition",
+        url: "/api/db/userspace/admin/saveTrksPosition",
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         data: json_object,

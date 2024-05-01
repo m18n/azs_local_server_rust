@@ -1,5 +1,6 @@
 use std::cmp::PartialEq;
 use std::ffi::c_double;
+use std::fmt::format;
 use std::sync::Arc;
 use actix_web::{HttpResponse, ResponseError, web};
 use ramhorns::{Content, Template};
@@ -17,7 +18,7 @@ use serde::de::Unexpected::Str;
 
 use sqlx::mysql::MySqlQueryResult;
 use crate::globals::LOGS_DB_ERROR;
-use serde_json::Value::String as JsonString;
+use serde_json::Value::{String as JsonString};
 use std::string::String;
 use futures_util::future::join_all;
 
@@ -77,12 +78,12 @@ impl ResponseError for MyError {
         }
     }
 }
-#[derive(Debug, Serialize, Deserialize, FromRow,Content)]
+#[derive(Debug, Serialize, Deserialize, FromRow,Content,Clone)]
 pub struct User{
-    id_user:i32,
+    pub id_user:i32,
     #[sqlx(rename = "user")]
-    name:String,
-    admin:bool
+    pub name:String,
+    pub admin:bool
 }
 #[derive(Debug, Serialize, Deserialize, FromRow,Content)]
 pub struct UserDb{
@@ -147,6 +148,20 @@ pub struct TovarDb {
     name_p_v:String,
     color:i32,
 }
+#[derive(sqlx::FromRow, Debug,Serialize, Deserialize)]
+pub struct SmenaDb{
+    pub NN:i32,
+    pub NSmen:i32,
+    pub id_operator:i32,
+    pub status:i32,
+}
+#[derive(Debug,Serialize, Deserialize)]
+pub struct Smena{
+    pub nn:i32,
+    pub nn_smena:i32,
+    pub id_user:i32,
+    pub status:bool,
+}
 #[derive(Debug,Serialize, Deserialize)]
 pub struct Color{
     pub r:u8,
@@ -201,13 +216,13 @@ pub struct AzsDb{
     pub mysql_info_success:MysqlInfo,
     pub mysql_info_last:MysqlInfo,
     pub is_connecting:bool,
-
+    pub azs_id:String
 }
 
 
 impl AzsDb {
     pub fn new()->AzsDb{
-        AzsDb{mysql:None,mysql_info_success:MysqlInfo::new(),mysql_info_last:MysqlInfo::new(),is_connecting:false}
+        AzsDb{mysql:None,mysql_info_success:MysqlInfo::new(),mysql_info_last:MysqlInfo::new(),is_connecting:false,azs_id:String::new()}
     }
     pub async fn disconnect(&mut self){
         self.is_connecting=false;
@@ -239,12 +254,28 @@ impl AzsDb {
                 return Err(MyError::DatabaseError(str_error))
             },
         };
-
+        self.azs_id= self.getAzsid().await?;
         self.is_connecting=false;
         Ok(!self.mysql.is_none())
     }
-    pub async fn getUsers(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<User>, MyError> {
-        let azs_db=azs_db.lock().await;
+    pub async fn getAzsid(&self)->Result<String, MyError>{
+
+        let azs_id:Vec<String>= sqlx::query_scalar::<_,String>("SELECT value FROM loc_const WHERE descr_var='cnst_ID_Station';")
+            .fetch_all(self.mysql.as_ref().unwrap())
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        if !azs_id.is_empty(){
+            Ok(azs_id[0].clone())
+        }else{
+            let str_error = format!("MYSQL|| {} error: EMPTY AZS ID\n", get_nowtime_str());
+            Err(MyError::DatabaseError(str_error))
+        }
+    }
+    pub async fn getUsers(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Vec<User>, MyError> {
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let users_db:Vec<UserDb>= sqlx::query_as("SELECT * FROM loc_users INNER JOIN ref_users ON loc_users.id_user = ref_users.id_user;")
@@ -264,8 +295,89 @@ impl AzsDb {
         }
         Ok(users)
     }
-    pub async fn getTanks(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<Tank>, MyError> {
-        let azs_db=azs_db.lock().await;
+    pub async fn getSmena(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Smena, MyError> {
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let query=format!("SELECT * FROM smena ORDER BY NSmen DESC LIMIT 1;");
+        let smena_db:Vec<SmenaDb>= sqlx::query_as(query.as_str())
+            .fetch_all(&mysqlpool)
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        if smena_db.is_empty(){
+            let str_error = format!("MYSQL|| {} error: SMENA EMPTY\n", get_nowtime_str());
+            return Err(MyError::DatabaseError(str_error));
+        }
+        let bool_status=smena_db[0].status != 0;
+        Ok(Smena{nn:smena_db[0].NN,id_user:smena_db[0].id_operator,status:bool_status,nn_smena:smena_db[0].NSmen})
+    }
+    pub async fn closeSmena(azs_db_m:Arc<Mutex<AzsDb>>)->Result<bool, MyError>{
+        let mut azs_id =String::new();
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        azs_id=azs_db.azs_id.clone();
+        drop(azs_db);
+        let mut smena =Self::getSmena(azs_db_m.clone()).await?;
+        let query = format!("UPDATE smena SET status=0, sm_end=\"{}\"  WHERE NSmen={};", get_nowtime_str(), smena.nn_smena);
+        let users = sqlx::query(query.as_str())
+            .execute(&mysqlpool)
+            .await;
+        match users {
+            Ok(_) => {
+                Ok(true)
+            }
+            Err(e) => {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                Err(MyError::DatabaseError(str_error))
+            }
+        }
+
+
+    }
+    pub async fn setSmenaOperator(azs_db_m:Arc<Mutex<AzsDb>>,id_user:i32)->Result<bool, MyError>{
+        let mut azs_id =String::new();
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        azs_id=azs_db.azs_id.clone();
+        drop(azs_db);
+        let mut smena =Self::getSmena(azs_db_m.clone()).await?;
+        smena.id_user=id_user;
+        if smena.status==true {
+            let query = format!("UPDATE smena SET id_operator={} WHERE NSmen={};", smena.id_user, smena.nn_smena);
+            let users = sqlx::query(query.as_str())
+                .execute(&mysqlpool)
+                .await;
+            match users {
+                Ok(_) => {
+                    Ok(true)
+                }
+                Err(e) => {
+                    let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                    Err(MyError::DatabaseError(str_error))
+                }
+            }
+        }else{
+            let query = format!("INSERT INTO smena (NN,id_azs,sm_start,sm_end,id_operator,status,id_ppo,znum) VALUES ({},{},'{}','{}',{},1,10,10);",
+            smena.nn+1,azs_id,get_nowtime_str(),get_nowtime_str(),smena.id_user);
+            let users = sqlx::query(query.as_str())
+                .execute(&mysqlpool)
+                .await;
+            match users {
+                Ok(_) => {
+                    Ok(true)
+                }
+                Err(e) => {
+                    let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                    Err(MyError::DatabaseError(str_error))
+                }
+            }
+        }
+    }
+    pub async fn getTanks(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Vec<Tank>, MyError> {
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let tanks:Vec<Tank>= sqlx::query_as("SELECT * FROM tank ORDER BY NN;")
@@ -278,8 +390,8 @@ impl AzsDb {
 
         Ok(tanks)
     }
-    pub async fn getTovars(azs_db:Arc<Mutex<AzsDb>>)->Result<Vec<Tovar>,MyError>{
-        let azs_db=azs_db.lock().await;
+    pub async fn getTovars(azs_db_m:Arc<Mutex<AzsDb>>)->Result<Vec<Tovar>,MyError>{
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let query = r#"
@@ -308,8 +420,8 @@ impl AzsDb {
         }
         Ok(tovars)
     }
-    pub async fn getTrks(azs_db:Arc<Mutex<AzsDb>>)-> Result<Vec<Trk>, MyError> {
-        let azs_db=azs_db.lock().await;
+    pub async fn getTrks(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Vec<Trk>, MyError> {
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let query = r#"
@@ -347,8 +459,8 @@ impl AzsDb {
         }
         Ok(trks)
     }
-    pub async fn saveTrkPosition(azs_db:Arc<Mutex<AzsDb>>,trk_pos:PositionTrk,screen_size: ScreenSize)->Result<bool, MyError>{
-        let azs_db=azs_db.lock().await;
+    pub async fn saveTrkPosition(azs_db_m:Arc<Mutex<AzsDb>>,trk_pos:PositionTrk,screen_size: ScreenSize)->Result<bool, MyError>{
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let screen_width_f=screen_size.width as f32;
@@ -373,11 +485,11 @@ impl AzsDb {
             }
         }
     }
-    pub async fn saveTrksPosition(azs_db:Arc<Mutex<AzsDb>>,trks_pos:SaveTrksPosition)->Result<bool, MyError>{
-        Self::setScreenSize(azs_db.clone(),trks_pos.screen_scale.clone()).await?;
+    pub async fn saveTrksPosition(azs_db_m:Arc<Mutex<AzsDb>>,trks_pos:SaveTrksPosition)->Result<bool, MyError>{
+        Self::setScreenSize(azs_db_m.clone(),trks_pos.screen_scale.clone()).await?;
         let mut vector_tasks =Vec::new();
         for element in trks_pos.objects{
-            vector_tasks.push(Self::saveTrkPosition(azs_db.clone(),element.clone(),trks_pos.screen_scale.clone()));
+            vector_tasks.push(Self::saveTrkPosition(azs_db_m.clone(),element.clone(),trks_pos.screen_scale.clone()));
         }
         let results=join_all(vector_tasks).await;
         for res in results{
@@ -385,8 +497,8 @@ impl AzsDb {
         }
        Ok(true)
     }
-    pub async fn setScreenSize(azs_db:Arc<Mutex<AzsDb>>,screen_size: ScreenSize)->Result<bool, MyError>{
-        let azs_db=azs_db.lock().await;
+    pub async fn setScreenSize(azs_db_m:Arc<Mutex<AzsDb>>,screen_size: ScreenSize)->Result<bool, MyError>{
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let query=format!("UPDATE loc_const SET value=\"{},{}\" WHERE descr_var=\"cnst_ScreenSize\";",screen_size.width,screen_size.height);
@@ -403,8 +515,8 @@ impl AzsDb {
             }
         }
     }
-    pub async fn checkAuth(azs_db:Arc<Mutex<AzsDb>>,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
-        let azs_db=azs_db.lock().await;
+    pub async fn checkAuth(azs_db_m:Arc<Mutex<AzsDb>>,id_user:i32,password:String,is_admin:&mut bool)->Result<bool, MyError>{
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let passwords:Vec<String>= sqlx::query_scalar::<_,String>("SELECT password FROM loc_users WHERE id_user=?;")
@@ -438,8 +550,8 @@ impl AzsDb {
         // }
 
     }
-    pub async fn getScreenSize(azs_db:Arc<Mutex<AzsDb>>)->Result<ScreenSize, MyError>{
-        let azs_db=azs_db.lock().await;
+    pub async fn getScreenSize(azs_db_m:Arc<Mutex<AzsDb>>)->Result<ScreenSize, MyError>{
+        let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
         let screen_size:Vec<String>= sqlx::query_scalar::<_,String>("SELECT value FROM loc_const WHERE descr_var=\"cnst_ScreenSize\";;")

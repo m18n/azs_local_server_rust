@@ -18,6 +18,18 @@ pub async fn m_test_request(state: web::Data<StateDb>)-> Result<Json<RequestResu
 
     Ok(web::Json(RequestResult {status:true}))
 }
+#[get("/outshift")]
+pub async fn m_out_shift(state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    AzsDb::closeSmena(state.azs_db.clone()).await?;
+    let cookie = Cookie::build("refresh_token", "")
+        .path("/")
+        .http_only(true)
+        .finish();
+    let response = HttpResponse::Found()
+        .insert_header((http::header::LOCATION, "/view/login")).cookie(cookie)
+        .finish();
+    Ok(response)
+}
 #[post("/auth")]
 pub async fn m_auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
 
@@ -26,6 +38,7 @@ pub async fn m_auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> R
     let res=AzsDb::checkAuth(state.azs_db.clone(),auth_info.id_user,auth_info.password.clone(),&mut is_admin).await?;
 
     if res==true {
+        AzsDb::setSmenaOperator(state.azs_db.clone(),auth_info.id_user).await?;
         let cookie = Cookie::build("refresh_token", create_token(auth_info.id_user, is_admin))
             .path("/")
             .http_only(true)

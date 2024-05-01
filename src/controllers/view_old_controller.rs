@@ -136,3 +136,22 @@ pub async fn u_main_settings(state: web::Data<StateDb>)-> Result<HttpResponse, M
 pub async fn m_main_settings(req:HttpRequest,state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
     start_controller(wrap_handler(a_main_settings), wrap_handler(u_main_settings),&req,state.clone()).await
 }
+pub fn get_http_redirect()->HttpResponse{
+    let response = HttpResponse::Found()
+        .insert_header((http::header::LOCATION, "/"))
+        .finish();
+    response
+}
+pub async fn a_main_settings_configuration(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
+    let admin_template=AdminTemplate{admin:true};
+    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
+    let tpl = Template::new(contents).unwrap();
+    Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
+}
+pub async fn u_main_settings_configuration(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
+    Ok(get_http_redirect())
+}
+#[get("/main/settings/configuration")]
+pub async fn m_main_settings_configuration(req:HttpRequest,state: web::Data<StateDb>) -> Result<HttpResponse, MyError> {
+    start_controller(wrap_handler(a_main_settings_configuration), wrap_handler(u_main_settings_configuration),&req,state.clone()).await
+}

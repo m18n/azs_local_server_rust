@@ -101,7 +101,9 @@ async fn main() -> std::io::Result<()> {
                                 web::scope("/old")
                                     .service(view_old_controller::m_main)
                                     .service(view_old_controller::m_main_settings)
+
                             )
+                            .service(view_old_controller::m_main_settings_configuration)
                     )
 
 

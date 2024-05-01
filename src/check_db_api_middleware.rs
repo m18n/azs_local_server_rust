@@ -51,6 +51,10 @@ enum StatusDbRequest{
     ConnectErr,
     RequestErr
 }
+#[derive(Serialize, Deserialize)]
+struct ErrorDb{
+    error:StatusDbRequest
+}
 impl<S, B> Service<ServiceRequest> for CheckDbApiMiddleware<S>
     where
         S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>+ 'static,
@@ -74,7 +78,7 @@ impl<S, B> Service<ServiceRequest> for CheckDbApiMiddleware<S>
             if azs_db.mysql.is_none() {
                 drop(azs_db);
 
-                let response = HttpResponse::Ok().json(StatusDbRequest::ConnectErr).map_into_right_body();
+                let response = HttpResponse::Ok().json(ErrorDb{error:StatusDbRequest::ConnectErr}).map_into_right_body();
                 Ok(ServiceResponse::new(req.into_parts().0, response))
             } else {
                 drop(azs_db);
@@ -92,7 +96,7 @@ impl<S, B> Service<ServiceRequest> for CheckDbApiMiddleware<S>
                                 let updated_error = MyError::DatabaseError(format!("{} URL ERROR: {} ", my_error,url));
                                 updated_error.pushlog().await;
                                 // Використання оновленої помилки для створення нової HTTP відповіді
-                                let response = HttpResponse::Ok().json(StatusDbRequest::RequestErr);
+                                let response = HttpResponse::Ok().json(ErrorDb{error:StatusDbRequest::RequestErr});
                                 let new_serv=ServiceResponse::new(service_response.request().clone(), response);
                                 // Потенційно змініть відповідь залежно від типу помилки
                                 return Ok(new_serv.map_into_right_body());

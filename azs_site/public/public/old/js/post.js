@@ -13,10 +13,18 @@ function auth(){
         url: "/api/db/auth",
         data: formData,
         success: function(data){
-            if(data["status"]==true){
-                document.location.href = '/view/userspace/old/main';
+            if(data.hasOwnProperty("error")){
+                if(data["error"]=="ConnectErr"){
+                    document.location.href = '/settings/dbproperties';
+                }else if(data["error"]=="RequestErr"){
+                    document.location.href = '/settings/dberror';
+                }
             }else{
-                $(".status").text("STATUS: wrong password");
+                if(data["status"]==true){
+                    document.location.href = '/view/userspace/old/main';
+                }else{
+                    $(".status").text("STATUS: wrong password");
+                }
             }
         },
         dataType: "json",
@@ -96,7 +104,17 @@ function save_pump(json_object){
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         data: json_object,
-        success: function(data){console.log(data)},
+        success: function(data){
+            if(data.hasOwnProperty("error")){
+                if(data["error"]=="ConnectErr"){
+                    document.location.href = '/settings/dbproperties';
+                }else if(data["error"]=="RequestErr"){
+                    document.location.href = '/settings/dberror';
+                }
+            }else{
+                console.log(data)
+            }
+        },
         error: function(errMsg) {
             console.log(data)
         }

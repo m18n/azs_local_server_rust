@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::models::{ScreenSize, Tank, Tovar, Trk};
+use crate::models::{ScreenSize, Tank, Tank_ID, Tovar, Tovar_ID, Trk, Trk_ID};
 
 #[derive(Deserialize,Serialize)]
 pub struct RequestResult{
@@ -23,4 +23,17 @@ pub struct AllObject{
     pub tovars:Option<Vec<Tovar>>,
     #[serde(default)]
     pub tanks:Option<Vec<Tank>>
+}
+
+
+
+
+#[derive(Deserialize,Serialize)]
+pub struct AllObject_ID{
+    #[serde(default)]
+    pub trks:Option<Vec<Trk_ID>>,
+    #[serde(default)]
+    pub tovars:Option<Vec<Tovar_ID>>,
+    #[serde(default)]
+    pub tanks:Option<Vec<Tank_ID>>
 }

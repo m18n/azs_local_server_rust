@@ -137,6 +137,7 @@ async fn main() -> std::io::Result<()> {
                                     .service(api_db_controller::m_save_trks_position)
                                     .service(api_db_controller::m_settings_set)
                                     .service(api_db_controller::m_settings_get)
+                                    .service(api_db_controller::m_settings_delete)
                             )
                             .service(
                                 web::scope("/user")

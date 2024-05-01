@@ -11,7 +11,7 @@ use serde_json::from_value;
 use sqlx::Value;
 use crate::base::file_openString;
 
-use crate::controllers::objects_of_controllers::{AllObject, AuthInfo, RequestResult};
+use crate::controllers::objects_of_controllers::{AllObject, AllObject_ID, AuthInfo, RequestResult};
 use crate::globals::LOGS_DB_ERROR;
 use crate::jwt::create_token;
 use crate::models::{AzsDb, BoxedFutureBool, MyError, MysqlInfo, SaveTrksPosition};
@@ -91,6 +91,28 @@ pub async fn m_settings_set(all_object:web::Json<AllObject>,state: web::Data<Sta
     }
     if let Some(tanks) = all_object.tanks {
         vector_tasks.push(Box::pin(AzsDb::setTanks(state.azs_db.clone(), tanks)));
+    }
+
+    let results = join_all(vector_tasks).await;
+    for res in results {
+        res?;
+    }
+
+    let mut respon = HttpResponse::Ok().json(RequestResult { status: true});
+    Ok(respon)
+}
+#[post("/settings/delete")]
+pub async fn m_settings_delete(all_object:web::Json<AllObject_ID>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let all_object=all_object.into_inner();
+    let mut vector_tasks: Vec<BoxedFutureBool>=Vec::new();
+    if let Some(tovars) = all_object.tovars {
+        //vector_tasks.push(Box::pin(AzsDb::setTovars(state.azs_db.clone(), tovars)));
+    }
+    if let Some(trks) = all_object.trks {
+        vector_tasks.push(Box::pin(AzsDb::deleteTrks(state.azs_db.clone(), trks)));
+    }
+    if let Some(tanks) = all_object.tanks {
+        //vector_tasks.push(Box::pin(AzsDb::setTanks(state.azs_db.clone(), tanks)));
     }
 
     let results = join_all(vector_tasks).await;

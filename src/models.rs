@@ -180,6 +180,23 @@ pub struct Tovar {
     pub name_p_v:String,
     pub color:Color
 }
+#[derive(Deserialize,Serialize,Clone)]
+pub struct Pist_ID{
+    pub id_pist:i32
+}
+#[derive(Deserialize,Serialize,Clone)]
+pub struct Trk_ID{
+    pub id_trk:i32,
+    pub pists:Vec<Pist_ID>
+}
+#[derive(Deserialize,Serialize,Clone)]
+pub struct Tovar_ID{
+    pub id_tovar:i32
+}
+#[derive(Deserialize,Serialize,Clone)]
+pub struct Tank_ID{
+    pub id_tank:i32
+}
 #[derive(Debug, Serialize, Deserialize, FromRow,Clone,Content,PartialEq)]
 pub struct MysqlInfo{
     pub ip:String,
@@ -322,63 +339,30 @@ impl AzsDb {
     pub async fn closeSmena(azs_db_m:Arc<Mutex<AzsDb>>)->Result<bool, MyError>{
         let mut azs_id =String::new();
         let azs_db=azs_db_m.lock().await;
-        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         azs_id=azs_db.azs_id.clone();
         drop(azs_db);
         let mut smena =Self::getSmena(azs_db_m.clone()).await?;
         let query = format!("UPDATE smena SET status=0, sm_end=\"{}\"  WHERE NSmen={};", get_nowtime_str(), smena.nn_smena);
-        let users = sqlx::query(query.as_str())
-            .execute(&mysqlpool)
-            .await;
-        match users {
-            Ok(_) => {
-                Ok(true)
-            }
-            Err(e) => {
-                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
-                Err(MyError::DatabaseError(str_error))
-            }
-        }
-
+        Self::executeSql(azs_db_m.clone(),query,"Close Smena".to_string()).await?;
+        Ok(true)
 
     }
     pub async fn setSmenaOperator(azs_db_m:Arc<Mutex<AzsDb>>,id_user:i32)->Result<bool, MyError>{
         let mut azs_id =String::new();
         let azs_db=azs_db_m.lock().await;
-        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         azs_id=azs_db.azs_id.clone();
         drop(azs_db);
         let mut smena =Self::getSmena(azs_db_m.clone()).await?;
         smena.id_user=id_user;
         if smena.status==true {
             let query = format!("UPDATE smena SET id_operator={} WHERE NSmen={};", smena.id_user, smena.nn_smena);
-            let users = sqlx::query(query.as_str())
-                .execute(&mysqlpool)
-                .await;
-            match users {
-                Ok(_) => {
-                    Ok(true)
-                }
-                Err(e) => {
-                    let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
-                    Err(MyError::DatabaseError(str_error))
-                }
-            }
+            Self::executeSql(azs_db_m.clone(),query,"UPDATE SMENA".to_string()).await?;
+            Ok(true)
         }else{
             let query = format!("INSERT INTO smena (NN,id_azs,sm_start,sm_end,id_operator,status,id_ppo,znum) VALUES ({},{},'{}','{}',{},1,10,10);",
             smena.nn+1,azs_id,get_nowtime_str(),get_nowtime_str(),smena.id_user);
-            let users = sqlx::query(query.as_str())
-                .execute(&mysqlpool)
-                .await;
-            match users {
-                Ok(_) => {
-                    Ok(true)
-                }
-                Err(e) => {
-                    let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
-                    Err(MyError::DatabaseError(str_error))
-                }
-            }
+            Self::executeSql(azs_db_m.clone(),query,"INSERT SMENA".to_string()).await?;
+            Ok(true)
         }
     }
     pub async fn getTanks(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Vec<Tank>, MyError> {
@@ -396,23 +380,10 @@ impl AzsDb {
         Ok(tanks)
     }
     pub async fn setTank(azs_db_m:Arc<Mutex<AzsDb>>,tank:Tank)->Result<bool, MyError>{
-        let azs_db=azs_db_m.lock().await;
-        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
-        drop(azs_db);
         let query=format!("UPDATE tank SET id_tank={}, id_tovar={}, volume={}, remain={} WHERE id_tank={};",
         tank.id_tank,tank.id_tovar,tank.volume,tank.remain,tank.id_tank);
-        let res= sqlx::query(query.as_str())
-            .execute(&mysqlpool)
-            .await;
-        match res {
-            Ok(_) => {
-                Ok(true)
-            }
-            Err(e) => {
-                let str_error = format!("MYSQL|| {} error: SET TRK \n", get_nowtime_str());
-                Err(MyError::DatabaseError(str_error))
-            }
-        }
+        Self::executeSql(azs_db_m.clone(),query,"SET TRK".to_string()).await?;
+        Ok(true)
     }
     pub async fn setTanks(azs_db_m:Arc<Mutex<AzsDb>>,tanks:Vec<Tank>)->Result<bool, MyError>{
 
@@ -458,25 +429,11 @@ impl AzsDb {
         Ok(tovars)
     }
     pub async fn setTovar(azs_db_m:Arc<Mutex<AzsDb>>,tovar:Tovar)->Result<bool, MyError>{
-        let azs_db=azs_db_m.lock().await;
-        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
-        drop(azs_db);
         let query=format!("UPDATE tovar SET id_tovar={}, price={}, name=\"{}\", \
         name_p=\"{}\", name_p_f=\"{}\", name_p_v=\"{}\", color={} WHERE id_tovar={};",tovar.id_tovar,tovar.price, tovar.name,
                           tovar.name_p,tovar.name_p_f,tovar.name_p_v,get_rgb(tovar.color.r,tovar.color.g,tovar.color.b),tovar.id_tovar);
-        let res= sqlx::query(query.as_str())
-            .execute(&mysqlpool)
-            .await;
-
-        match res {
-            Ok(_) => {
-                Ok(true)
-            }
-            Err(e) => {
-                let str_error = format!("MYSQL|| {} error: SET TOVAR \n", get_nowtime_str());
-                Err(MyError::DatabaseError(str_error))
-            }
-        }
+        Self::executeSql(azs_db_m.clone(),query,"SET TOVAR".to_string()).await?;
+        Ok(true)
     }
     pub async fn setTovars(azs_db_m:Arc<Mutex<AzsDb>>,tovars:Vec<Tovar>)->Result<bool, MyError>{
 
@@ -538,18 +495,22 @@ impl AzsDb {
         }
         Ok(true)
     }
-    pub async fn setTrk(azs_db_m:Arc<Mutex<AzsDb>>,trk:Trk)->Result<bool, MyError>{
+    pub async fn executeSql(azs_db_m:Arc<Mutex<AzsDb>>,query:String,error_mess:String)->Result<bool, MyError>{
         let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
         drop(azs_db);
-        let query=format!("UPDATE com_trk SET id_trk={}, x_pos={}, y_pos={}, scale={} WHERE id_trk={};",
-        trk.id_trk,trk.x_pos,trk.y_pos,trk.scale,trk.id_trk);
         let res= sqlx::query(query.as_str())
             .execute(&mysqlpool)
             .await.map_err(|e|{
-                let str_error = format!("MYSQL|| {} error: SET TRK \n", get_nowtime_str());
-                MyError::DatabaseError(str_error)
+            let str_error = format!("MYSQL|| {} error: {} \n", get_nowtime_str(),error_mess);
+            MyError::DatabaseError(str_error)
         })?;
+        Ok(true)
+    }
+    pub async fn setTrk(azs_db_m:Arc<Mutex<AzsDb>>,trk:Trk)->Result<bool, MyError>{
+        let query=format!("UPDATE com_trk SET id_trk={}, x_pos={}, y_pos={}, scale={} WHERE id_trk={};",
+                          trk.id_trk,trk.x_pos,trk.y_pos,trk.scale,trk.id_trk);
+        Self::executeSql(azs_db_m.clone(),query,"SET TRK".to_string()).await?;
         Self::setPists(azs_db_m.clone(),trk.pists.clone(),trk.id_trk).await?;
         Ok(true)
     }
@@ -566,7 +527,39 @@ impl AzsDb {
         Ok(true)
 
     }
+    pub async fn deleteTrk(azs_db_m:Arc<Mutex<AzsDb>>,trk:Trk_ID)->Result<bool, MyError>{
+        let mut vector_tasks =Vec::new();
+        if trk.pists.is_empty(){
+            let query=format!("DELETE FROM com_trk WHERE id_trk={};",trk.id_trk);
+            vector_tasks.push(Self::executeSql(azs_db_m.clone(), query, "DELETE ALL TRK".to_string()));
+            let query=format!("DELETE FROM trk WHERE id_trk={};",trk.id_trk);
+            vector_tasks.push(Self::executeSql(azs_db_m.clone(), query, "DELETE ALL TRK".to_string()));
+        }else{
+            for pist in trk.pists{
+                let query=format!("DELETE FROM trk WHERE id_trk={} AND id_pist={};",trk.id_trk,pist.id_pist);
+                vector_tasks.push(Self::executeSql(azs_db_m.clone(), query, "DELETE TRK PIST".to_string()));
+            }
+        }
+        let results=join_all(vector_tasks).await;
+        for res in results{
+            res?;
+        }
+        //Self::setPists(azs_db_m.clone(),trk.pists.clone(),trk.id_trk).await?;
+        Ok(true)
+    }
+    pub async fn deleteTrks(azs_db_m:Arc<Mutex<AzsDb>>,trks:Vec<Trk_ID>)->Result<bool, MyError>{
 
+        let mut vector_tasks =Vec::new();
+        for element in trks{
+            vector_tasks.push(Self::deleteTrk(azs_db_m.clone(),element.clone()));
+        }
+        let results=join_all(vector_tasks).await;
+        for res in results{
+            res?;
+        }
+        Ok(true)
+
+    }
     pub async fn getTrks(azs_db_m:Arc<Mutex<AzsDb>>)-> Result<Vec<Trk>, MyError> {
         let azs_db=azs_db_m.lock().await;
         let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();

@@ -108,7 +108,7 @@ async fn main() -> std::io::Result<()> {
 
 
             )
-            .service(fs::Files::new("/public", "./azs_site/public/public").show_files_listing())
+            .service(fs::Files::new("/public", "./azs_site/public").show_files_listing())
             .service(
                 web::scope("/settings")
                     .service(settings_controller::m_show_error)
@@ -135,7 +135,6 @@ async fn main() -> std::io::Result<()> {
                             )
                             .service(
                                 web::scope("/user")
-
                             )
                             .service(
                                 web::scope("/all")

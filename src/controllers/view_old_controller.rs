@@ -24,7 +24,7 @@ pub async fn m_login(state: web::Data<StateDb>) -> Result<HttpResponse, MyError>
         smena: smena.status,
         users: users
     };
-    let contents = file_openString("./azs_site/public/public/old/login.html").await?;
+    let contents = file_openString("./azs_site/public/old/login.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&auth)))
 }
@@ -92,7 +92,7 @@ pub async fn a_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
         screen_width:screen.width,
         trks:trks_for_template
     };
-    let contents = file_openString("./azs_site/public/public/old/serv.html").await?;
+    let contents = file_openString("./azs_site/public/old/serv.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&main_template)))
 }
@@ -110,7 +110,7 @@ pub async fn u_main(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
         screen_width:screen.width,
         trks:trks_for_template
     };
-    let contents = file_openString("./azs_site/public/public/old/serv.html").await?;
+    let contents = file_openString("./azs_site/public/old/serv.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&main_template)))
 }
@@ -121,13 +121,13 @@ pub async fn m_main(req:HttpRequest,state: web::Data<StateDb>) -> Result<HttpRes
 }
 pub async fn a_main_settings(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
     let admin_template=AdminTemplate{admin:true};
-    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
+    let contents = file_openString("./azs_site/public/old/settings_azs.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
 }
 pub async fn u_main_settings(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
     let admin_template=AdminTemplate{admin:false};
-    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
+    let contents = file_openString("./azs_site/public/old/settings_azs.html").await?;
     let tpl = Template::new(contents).unwrap();
     Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
 }
@@ -143,10 +143,10 @@ pub fn get_http_redirect()->HttpResponse{
     response
 }
 pub async fn a_main_settings_configuration(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
-    let admin_template=AdminTemplate{admin:true};
-    let contents = file_openString("./azs_site/public/public/old/settings_azs.html").await?;
-    let tpl = Template::new(contents).unwrap();
-    Ok(HttpResponse::Ok().content_type("text/html").body(tpl.render(&admin_template)))
+
+    let contents = file_openString("./azs_site/index.html").await?;
+
+    Ok(HttpResponse::Ok().content_type("text/html").body(contents))
 }
 pub async fn u_main_settings_configuration(state: web::Data<StateDb>)-> Result<HttpResponse, MyError>{
     Ok(get_http_redirect())

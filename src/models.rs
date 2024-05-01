@@ -262,7 +262,7 @@ impl AzsDb {
         self.mysql=match MySqlPool::connect(&database_url).await{
             Ok(pool)=>{
                 println!("CONNECTION to mysql db successfully");
-                if(self.mysql_info_success!=mysql_info){
+                if self.mysql_info_success!=mysql_info{
                     local_setMysqlInfo(sqlite_pool, mysql_info.clone()).await?;
                 }
                 let mut log = LOGS_DB_ERROR.lock().await;
@@ -590,7 +590,7 @@ impl AzsDb {
 
         for item in trks_db{
 
-            if(last_id!=item.id_trk) {
+            if last_id!=item.id_trk {
                 n += 1;
                 trks.push(Trk { nn: n, id_trk: item.id_trk, x_pos: item.x_pos, y_pos: item.y_pos, scale: item.scale, pists: Vec::new() });
             }
@@ -722,7 +722,7 @@ impl AzsDb {
         }
     }
     pub fn getDbStatus(&self)->DbStatus{
-        if(self.mysql.is_none()){
+        if self.mysql.is_none(){
             if self.is_connecting==true{
                 DbStatus{status:TypesStatus::Connecting}
             }else{

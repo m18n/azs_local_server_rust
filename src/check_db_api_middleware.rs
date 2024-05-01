@@ -1,6 +1,5 @@
 use std::future;
 use std::future::{Future, ready, Ready};
-use std::os::linux::raw::stat;
 use std::pin::Pin;
 use std::rc::Rc;
 

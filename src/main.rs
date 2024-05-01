@@ -31,6 +31,7 @@ use crate::check_auth_only_admin_middleware::CheckAuthOnlyAdmin;
 use crate::check_db_api_middleware::CheckDbApi;
 //use crate::logger::LogManager;
 use crate::swagger_docs::ApiDoc;
+use actix_cors::Cors;
 
 
 struct StateDb{
@@ -80,7 +81,9 @@ async fn main() -> std::io::Result<()> {
     println!("START WEB SERVER");
 
     HttpServer::new(move || {
+        let cors = Cors::permissive();
         App::new()
+            .wrap(cors)
             .app_data(web::Data::clone(&state))
             .wrap(NoCache)
             .service(
@@ -132,6 +135,8 @@ async fn main() -> std::io::Result<()> {
                                 web::scope("/admin")
                                     .wrap(CheckAuthOnlyAdmin)
                                     .service(api_db_controller::m_save_trks_position)
+                                    .service(api_db_controller::m_settings_set)
+                                    .service(api_db_controller::m_settings_get)
                             )
                             .service(
                                 web::scope("/user")

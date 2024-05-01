@@ -2,12 +2,20 @@ use std::env;
 use std::fs::{self, DirBuilder};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
-
+//test
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
     let target_dir = Path::new(&out_dir).ancestors().nth(3).unwrap();
     let source_folder = Path::new("azs_site/dist");
 
+    let dockerfile_source = Path::new("Dockerfile");
+    let dockerfile_dest =target_dir.join("Dockerfile");
+    fs::copy(dockerfile_source, dockerfile_dest).expect("Failed to copy Dockerfile");
+
+    // Copy .dockerignore
+    let dockerignore_source = Path::new(".dockerignore");
+    let dockerignore_dest =target_dir.join(".dockerignore");
+    fs::copy(dockerignore_source, dockerignore_dest).expect("Failed to copy .dockerignore");
 
     let new_path = target_dir.join("azs_site");
     if new_path.exists() {

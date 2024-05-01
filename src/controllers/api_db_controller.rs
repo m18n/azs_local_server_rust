@@ -1,13 +1,20 @@
+use std::alloc::alloc;
+use std::future::Future;
+use std::pin::Pin;
 use actix_web::{Error, get, HttpResponse, post, Responder, web};
 use actix_web::cookie::Cookie;
 use actix_web::web::Json;
+use futures_util::future::join_all;
+use futures_util::stream::All;
 use ramhorns::Template;
+use serde_json::from_value;
+use sqlx::Value;
 use crate::base::file_openString;
 
-use crate::controllers::objects_of_controllers::{AuthInfo, RequestResult};
+use crate::controllers::objects_of_controllers::{AllObject, AuthInfo, RequestResult};
 use crate::globals::LOGS_DB_ERROR;
 use crate::jwt::create_token;
-use crate::models::{AzsDb, MyError, MysqlInfo, SaveTrksPosition};
+use crate::models::{AzsDb, BoxedFutureBool, MyError, MysqlInfo, SaveTrksPosition};
 use crate::render_temps;
 use crate::render_temps::MainTemplate;
 use crate::StateDb;
@@ -58,5 +65,39 @@ pub async fn m_save_trks_position(trks_position:web::Json<SaveTrksPosition>,stat
     println!("TRK POSITON: {:?}\n",&trks_position);
     let res=AzsDb::saveTrksPosition(state.azs_db.clone(),trks_position.into_inner()).await?;
     let mut respon = HttpResponse::Ok().json(RequestResult { status: res});
+    Ok(respon)
+}
+#[get("/settings/get")]
+pub async fn m_settings_get(state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let ( tovars_result, tanks_result, trks_result) = tokio::join!(
+        AzsDb::getTovars(state.azs_db.clone()), AzsDb::getTanks(state.azs_db.clone()), AzsDb::getTrks(state.azs_db.clone()));
+    let tovars = tovars_result?;
+    let tanks = tanks_result?;
+    let trks = trks_result?;
+    let mut respon = HttpResponse::Ok().json(AllObject{trks:Some(trks),tovars:Some(tovars),tanks:Some(tanks)});
+    Ok(respon)
+}
+
+
+#[post("/settings/set")]
+pub async fn m_settings_set(all_object:web::Json<AllObject>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let all_object=all_object.into_inner();
+    let mut vector_tasks: Vec<BoxedFutureBool>=Vec::new();
+    if let Some(tovars) = all_object.tovars {
+        vector_tasks.push(Box::pin(AzsDb::setTovars(state.azs_db.clone(), tovars)));
+    }
+    if let Some(trks) = all_object.trks {
+        vector_tasks.push(Box::pin(AzsDb::setTrks(state.azs_db.clone(), trks)));
+    }
+    if let Some(tanks) = all_object.tanks {
+        vector_tasks.push(Box::pin(AzsDb::setTanks(state.azs_db.clone(), tanks)));
+    }
+
+    let results = join_all(vector_tasks).await;
+    for res in results {
+        res?;
+    }
+
+    let mut respon = HttpResponse::Ok().json(RequestResult { status: true});
     Ok(respon)
 }

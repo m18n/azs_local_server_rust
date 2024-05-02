@@ -46,7 +46,8 @@ pub async fn m_auth(auth_info:web::Json<AuthInfo>,state: web::Data<StateDb>)-> R
 
     if res==true {
         AzsDb::setSmenaOperator(state.azs_db.clone(),auth_info.id_user).await?;
-        let cookie = Cookie::build("refresh_token", create_token(auth_info.id_user, is_admin))
+        let azs_db=state.azs_db.lock().await;
+        let cookie = Cookie::build("refresh_token", create_token(auth_info.id_user, is_admin,azs_db.mysql_info_success.clone()))
             .path("/")
             .http_only(true)
             .finish();

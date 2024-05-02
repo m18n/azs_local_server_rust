@@ -12,8 +12,8 @@ use futures_util::future::LocalBoxFuture;
 use futures_util::FutureExt;
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use sqlx::error::DatabaseError;
-use crate::jwt::{Claims, create_token};
-use crate::models::MyError;
+use crate::jwt::{Claims, create_token, validate_token};
+use crate::models::{MyError, MysqlInfo};
 use crate::StateDb;
 
 // There are two steps in middleware processing.
@@ -63,26 +63,7 @@ fn extract_cookie(req: &ServiceRequest, cookie_name: &str) -> Option<String> {
                 })
         })
 }
-fn validate_token(token:String, is_admin: &mut bool) -> bool {
 
-    let decoding_key = DecodingKey::from_secret("secret".as_ref());
-    let validation = Validation::default();
-    *is_admin=false;
-    match decode::<Claims>(token.as_str(), &decoding_key, &validation) {
-        Ok(data) => {
-            if data.claims.exp > Utc::now().timestamp() as usize {
-                *is_admin=data.claims.admin;
-                true
-            } else {
-                false
-            }
-
-        },
-        Err(err) => {
-           false
-        }
-    }
-}
 impl<S, B> Service<ServiceRequest> for CheckAuthMiddleware<S>
     where
         S: Service<ServiceRequest, Response = ServiceResponse<B>, Error = Error>+ 'static,
@@ -109,6 +90,9 @@ impl<S, B> Service<ServiceRequest> for CheckAuthMiddleware<S>
             let response = HttpResponse::Found()
                 .insert_header((http::header::LOCATION, "/view/login")).cookie(cookie)
                 .finish().map_into_right_body();
+            let azs_db=state.azs_db.lock().await;
+            let mysql_info=azs_db.mysql_info_success.clone();
+            drop(azs_db);
             match token {
                 None => {
 
@@ -116,7 +100,7 @@ impl<S, B> Service<ServiceRequest> for CheckAuthMiddleware<S>
                 }
                 Some(some) => {
                         let mut is_admin=false;
-                        if validate_token(some,&mut is_admin)==true {
+                        if validate_token(some,&mut is_admin,mysql_info)==true {
                             req.extensions_mut().insert(is_admin);
                             service.call(req).await.map(ServiceResponse::map_into_left_body)
                         }else{

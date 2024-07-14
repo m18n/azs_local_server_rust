@@ -17,7 +17,7 @@ use http::StatusCode;
 use tokio::sync::Mutex;
 use once_cell::sync::Lazy;
 use serde::de::Unexpected::Str;
-
+use utoipa::{IntoParams, ToSchema};
 use sqlx::mysql::MySqlQueryResult;
 use crate::globals::LOGS_DB_ERROR;
 use serde_json::Value::{String as JsonString};
@@ -98,7 +98,7 @@ pub struct ScreenSize{
     pub width:i32,
     pub height:i32,
 }
-#[derive(Debug, Serialize, Deserialize, FromRow,Content,Clone)]
+#[derive(Debug, Serialize, Deserialize, FromRow,Content,Clone,ToSchema,Default)]
 pub struct Tank{
     pub id_tank:i32,
     pub id_tovar:i32,
@@ -114,12 +114,12 @@ pub struct TrkDb {
     id_pist: i32,
     id_tank: i32,
 }
-#[derive(Serialize, Debug, Deserialize,Clone)]
+#[derive(Serialize, Debug, Deserialize,Clone,ToSchema,Default)]
 pub struct Pist {
     pub id_pist: i32,
     pub id_tank: i32,
 }
-#[derive(sqlx::FromRow, Debug,Serialize, Deserialize,Clone)]
+#[derive(sqlx::FromRow, Debug,Serialize, Deserialize,Clone,ToSchema,Default)]
 pub struct Trk {
     pub nn:i32,
     pub id_trk: i32,
@@ -164,13 +164,13 @@ pub struct Smena{
     pub id_user:i32,
     pub status:bool,
 }
-#[derive(Debug,Serialize, Deserialize,Clone)]
+#[derive(Debug,Serialize, Deserialize,Clone,ToSchema,Default)]
 pub struct Color{
     pub r:u8,
     pub g:u8,
     pub b:u8
 }
-#[derive(Debug,Serialize, Deserialize,Clone)]
+#[derive(Debug,Serialize, Deserialize,Clone,ToSchema,Default)]
 pub struct Tovar {
     pub id_tovar:i32,
     pub price: f32,
@@ -180,20 +180,20 @@ pub struct Tovar {
     pub name_p_v:String,
     pub color:Color
 }
-#[derive(Deserialize,Serialize,Clone)]
+#[derive(Deserialize,Serialize,Clone,ToSchema)]
 pub struct Pist_ID{
     pub id_pist:i32
 }
-#[derive(Deserialize,Serialize,Clone)]
+#[derive(Deserialize,Serialize,Clone,ToSchema)]
 pub struct Trk_ID{
     pub id_trk:i32,
     pub pists:Vec<Pist_ID>
 }
-#[derive(Deserialize,Serialize,Clone)]
+#[derive(Deserialize,Serialize,Clone,ToSchema)]
 pub struct Tovar_ID{
     pub id_tovar:i32
 }
-#[derive(Deserialize,Serialize,Clone)]
+#[derive(Deserialize,Serialize,Clone,ToSchema)]
 pub struct Tank_ID{
     pub id_tank:i32
 }
@@ -379,6 +379,25 @@ impl AzsDb {
 
         Ok(tanks)
     }
+    pub async fn getTank(azs_db_m:Arc<Mutex<AzsDb>>,id_tank:i32)-> Result<Tank, MyError> {
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let tanks:Vec<Tank>= sqlx::query_as("SELECT * FROM tank WHERE id_tank=? ORDER BY NN;")
+            .bind(id_tank)
+            .fetch_all(&mysqlpool)
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        if tanks.is_empty() {
+            Ok(Default::default())
+        }else{
+            Ok(tanks[0].clone())
+        }
+
+    }
     pub async fn setTank(azs_db_m:Arc<Mutex<AzsDb>>,tank:Tank)->Result<bool, MyError>{
         let query=format!("UPDATE tank SET id_tank={}, id_tovar={}, volume={}, remain={} WHERE id_tank={};",
         tank.id_tank,tank.id_tovar,tank.volume,tank.remain,tank.id_tank);
@@ -397,6 +416,30 @@ impl AzsDb {
         }
         Ok(true)
 
+    }
+    pub async fn getTovar(azs_db_m:Arc<Mutex<AzsDb>>,id_tovar:i32)->Result<Tovar,MyError>{
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let query =format!("SELECT * FROM tovar WHERE id_tovar={id_tovar} ORDER BY NN;");
+        let tovars_db:Vec<TovarDb>= sqlx::query_as(query.as_str())
+            .fetch_all(&mysqlpool)
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+        if tovars_db.is_empty()
+        {
+            return Ok(Default::default());
+        }
+        let mut item=tovars_db[0].clone();
+        let red = ((item.color >> 16) & 0xFF) as u8;
+        let green = ((item.color >> 8) & 0xFF) as u8;
+        let blue = (item.color & 0xFF) as u8;
+
+        Ok(Tovar{id_tovar:item.id_tovar,price:item.price,name:item.name,name_p:item.name_p,name_p_f:item.name_p_f,name_p_v:item.name_p_v,
+            color:Color{r:red,g:green,b:blue}})
     }
     pub async fn getTovars(azs_db_m:Arc<Mutex<AzsDb>>)->Result<Vec<Tovar>,MyError>{
         let azs_db=azs_db_m.lock().await;
@@ -598,6 +641,43 @@ impl AzsDb {
             last_id=item.id_trk;
         }
         Ok(trks)
+    }
+    pub async fn getTrk(azs_db_m:Arc<Mutex<AzsDb>>,id_trk:i32)-> Result<Trk, MyError> {
+        let azs_db=azs_db_m.lock().await;
+        let mysqlpool=azs_db.mysql.as_ref().unwrap().clone();
+        drop(azs_db);
+        let query =format!("SELECT com_trk.id_trk, com_trk.x_pos, com_trk.y_pos, com_trk.scale,
+                   trk.id_trk as trk_id_trk, trk.id_pist, trk.id_tank
+            FROM com_trk
+            INNER JOIN trk ON com_trk.id_trk = trk.id_trk WHERE com_trk.id_trk={id_trk}
+            ORDER BY com_trk.id_trk;");
+
+        let trks_db:Vec<TrkDb>= sqlx::query_as(query.as_str())
+            .fetch_all(&mysqlpool)
+            .await
+            .map_err( |e|  {
+                let str_error = format!("MYSQL|| {} error: {}\n", get_nowtime_str(), e.to_string());
+                MyError::DatabaseError(str_error)
+            })?;
+
+        let mut trks=Vec::with_capacity(trks_db.len());
+        if trks_db.is_empty()
+        {
+            return Ok(Default::default());
+        }
+        let mut last_id:i32=-1;
+        let mut n=0;
+
+        for item in trks_db{
+
+            if last_id!=item.id_trk {
+                n += 1;
+                trks.push(Trk { nn: n, id_trk: item.id_trk, x_pos: item.x_pos, y_pos: item.y_pos, scale: item.scale, pists: Vec::new() });
+            }
+            trks.last_mut().unwrap().pists.push(Pist{id_pist:item.id_pist,id_tank:item.id_tank});
+            last_id=item.id_trk;
+        }
+        Ok(trks[0].clone())
     }
     pub async fn saveTrkPosition(azs_db_m:Arc<Mutex<AzsDb>>,trk_pos:PositionTrk,screen_size: ScreenSize)->Result<bool, MyError>{
         let azs_db=azs_db_m.lock().await;

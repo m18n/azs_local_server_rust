@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 use crate::models::{ScreenSize, Tank, Tank_ID, Tovar, Tovar_ID, Trk, Trk_ID};
 
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize,Serialize,ToSchema)]
 pub struct RequestResult{
     pub status:bool,
 }
@@ -15,7 +16,7 @@ pub struct AuthResult{
     pub id_user:i32,
     pub password:String
 }
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize,Serialize,ToSchema)]
 pub struct AllObject{
     #[serde(default)]
     pub trks:Option<Vec<Trk>>,
@@ -28,7 +29,7 @@ pub struct AllObject{
 
 
 
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize,Serialize,ToSchema)]
 pub struct AllObject_ID{
     #[serde(default)]
     pub trks:Option<Vec<Trk_ID>>,

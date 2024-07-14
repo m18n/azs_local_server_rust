@@ -238,7 +238,28 @@ pub async fn m_settings_eachobjects_set(all_object:web::Json<AllObject>,state: w
     let mut respon = HttpResponse::Ok().json(RequestResult { status: true});
     Ok(respon)
 }
+#[post("/settings/set")]
+pub async fn m_settings_set(all_object:web::Json<AllObject>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let all_object=all_object.into_inner();
+    let mut vector_tasks: Vec<BoxedFutureBool>=Vec::new();
+    if let Some(tovars) = all_object.tovars {
+        vector_tasks.push(Box::pin(AzsDb::setTovars(state.azs_db.clone(), tovars)));
+    }
+    if let Some(trks) = all_object.trks {
+        vector_tasks.push(Box::pin(AzsDb::setTrks(state.azs_db.clone(), trks)));
+    }
+    if let Some(tanks) = all_object.tanks {
+        vector_tasks.push(Box::pin(AzsDb::setTanks(state.azs_db.clone(), tanks)));
+    }
 
+    let results = join_all(vector_tasks).await;
+    for res in results {
+        res?;
+    }
+
+    let mut respon = HttpResponse::Ok().json(RequestResult { status: true});
+    Ok(respon)
+}
 #[utoipa::path(
     get,
     path = "/api/db/userspace/admin/settings/eachobjects/get",
@@ -248,6 +269,16 @@ pub async fn m_settings_eachobjects_set(all_object:web::Json<AllObject>,state: w
 )]
 #[get("/settings/eachobjects/get")]
 pub async fn m_settings_eachobjects_get(state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let ( tovars_result, tanks_result, trks_result) = tokio::join!(
+        AzsDb::getTovars(state.azs_db.clone()), AzsDb::getTanks(state.azs_db.clone()), AzsDb::getTrks(state.azs_db.clone()));
+    let tovars = tovars_result?;
+    let tanks = tanks_result?;
+    let trks = trks_result?;
+    let mut respon = HttpResponse::Ok().json(AllObject{trks:Some(trks),tovars:Some(tovars),tanks:Some(tanks)});
+    Ok(respon)
+}
+#[get("/settings/get")]
+pub async fn m_settings_get(state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
     let ( tovars_result, tanks_result, trks_result) = tokio::join!(
         AzsDb::getTovars(state.azs_db.clone()), AzsDb::getTanks(state.azs_db.clone()), AzsDb::getTrks(state.azs_db.clone()));
     let tovars = tovars_result?;
@@ -266,6 +297,28 @@ pub async fn m_settings_eachobjects_get(state: web::Data<StateDb>)-> Result<Http
 )]
 #[post("/settings/eachobjects/delete")]
 pub async fn m_settings_eachobjects_delete(all_object:web::Json<AllObject_ID>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
+    let all_object=all_object.into_inner();
+    let mut vector_tasks: Vec<BoxedFutureBool>=Vec::new();
+    if let Some(tovars) = all_object.tovars {
+        //vector_tasks.push(Box::pin(AzsDb::setTovars(state.azs_db.clone(), tovars)));
+    }
+    if let Some(trks) = all_object.trks {
+        vector_tasks.push(Box::pin(AzsDb::deleteTrks(state.azs_db.clone(), trks)));
+    }
+    if let Some(tanks) = all_object.tanks {
+        //vector_tasks.push(Box::pin(AzsDb::setTanks(state.azs_db.clone(), tanks)));
+    }
+
+    let results = join_all(vector_tasks).await;
+    for res in results {
+        res?;
+    }
+
+    let mut respon = HttpResponse::Ok().json(RequestResult { status: true});
+    Ok(respon)
+}
+#[post("/settings/delete")]
+pub async fn m_settings_delete(all_object:web::Json<AllObject_ID>,state: web::Data<StateDb>)-> Result<HttpResponse, Error>{
     let all_object=all_object.into_inner();
     let mut vector_tasks: Vec<BoxedFutureBool>=Vec::new();
     if let Some(tovars) = all_object.tovars {

@@ -50,16 +50,6 @@ async fn connect_db(db_url:&str) -> Result<SqlitePool,Error> {
 }
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // let logger=LogManager::new().await;
-    // logger.add_log(vec!["error".to_string(), "sqlite".to_string()], "2023".to_string(), "test1".to_string()).await;
-    // logger.add_log(vec!["error".to_string(), "sqlite".to_string()], "2023".to_string(), "test2".to_string()).await;
-    // logger.add_log(vec!["error".to_string()], "2023".to_string(), "test3".to_string()).await;
-    // logger.add_log(vec!["error".to_string()], "2023".to_string(), "test4".to_string()).await;
-    // logger.add_log(vec!["error".to_string(), "sqlite".to_string()], "2023".to_string(), "test5".to_string()).await;
-    // println!("{}",logger.get_logs_json().await);
-    // logger.get_log(vec!["error".to_string()]).await;
-
-    //println!("{}",logger.get_key_json(vec!["error".to_string(),"sqlite".to_string()]).await.to_string());
     let sqlite= connect_db("azs_db.db").await.map_err(|e|
 
         std::io::Error::new(std::io::ErrorKind::Other, e.to_string())
@@ -76,7 +66,6 @@ async fn main() -> std::io::Result<()> {
     let state=web::Data::new(StateDb{
         azs_db:Arc::new(Mutex::new(azs_db)),
         sqlite:sqlite,
-
     });
     println!("START WEB SERVER");
 
